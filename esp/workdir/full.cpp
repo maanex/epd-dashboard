@@ -68,6 +68,7 @@ void setup() {
   }
 
   myServo.attach(PIN);  // Attach servo to GPIO 15
+  wifiMulti.addAP("NETWORK", "PASSWORD");
 }
 
 int lastAngle = 0;
