@@ -30,9 +30,9 @@ export const usePaint = (ctx: SKRSContext2D) => {
 
     if (mix === 'invert') {
       if (value === 1) return
-      data[y * ctx.canvas.width + x] = 1 - data[y * ctx.canvas.width + x]
+      data[~~y * ctx.canvas.width + ~~x] = 1 - data[~~y * ctx.canvas.width + ~~x]
     } else {
-      data[y * ctx.canvas.width + x] = value
+      data[~~y * ctx.canvas.width + ~~x] = value
     }
 
     changes = true
@@ -43,7 +43,31 @@ export const usePaint = (ctx: SKRSContext2D) => {
       x: fromX,
       y: fromY,
       w: width,
-      h: height
+      h: height,
+      br: 0
+    }
+
+    function checkBr(x: number, y: number) {
+      if (rect.br === 0)
+        return false
+
+      const dTop = y - rect.y
+      const dBottom = rect.y + rect.h - y
+      const dLeft = x - rect.x
+      const dRight = rect.x + rect.w - x
+
+      if (rect.br > 0) {
+        if (Math.sqrt(dTop**2 * dLeft**2) < rect.br) return true
+        if (Math.sqrt(dTop**2 * dRight**2) < rect.br) return true
+        if (Math.sqrt(dBottom**2 * dLeft**2) < rect.br) return true
+        if (Math.sqrt(dBottom**2 * dRight**2) < rect.br) return true
+      } else {
+        if (Math.sqrt(dTop**3 * dLeft**3) < rect.br**2) return true
+        if (Math.sqrt(dTop**3 * dRight**3) < rect.br**2) return true
+        if (Math.sqrt(dBottom**3 * dLeft**3) < rect.br**2) return true
+        if (Math.sqrt(dBottom**3 * dRight**3) < rect.br**2) return true
+      }
+      return false
     }
 
     const out = {
@@ -62,6 +86,11 @@ export const usePaint = (ctx: SKRSContext2D) => {
         rect.h = ~~(toY - rect.y)
         return out
       },
+      translate(dx: number, dy: number) {
+        rect.x += ~~dx
+        rect.y += ~~dy
+        return out
+      },
       inset: (dx: number, dy?: number) => {
         if (dy === undefined) dy = dx
         rect.x += ~~dx
@@ -70,9 +99,14 @@ export const usePaint = (ctx: SKRSContext2D) => {
         rect.h -= ~~dy * 2
         return out
       },
+      round: (radius: number) => {
+        rect.br = radius
+        return out
+      },
       fill: (style: FillStyle, mix?: MixMode) => {
         for (let y = rect.y; y < rect.y + rect.h; y++) {
           for (let x = rect.x; x < rect.x + rect.w; x++) {
+            if (checkBr(x, y)) continue
             setPixel(x, y, rasterize(style, x, y), mix)
           }
         }
@@ -83,6 +117,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
         for (let y = rect.y; y < rect.y + rect.h; y++) {
           for (let x = rect.x; x < rect.x + rect.w; x++) {
             if (x < rect.x + width || x >= rect.x + rect.w - width || y < rect.y + width || y >= rect.y + rect.h - width) {
+              if (checkBr(x, y)) continue
               setPixel(x, y, rasterize(style, x, y), mix)
             }
           }
