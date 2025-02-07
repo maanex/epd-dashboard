@@ -2,6 +2,7 @@ import type { WeatherData } from "./weather-types"
 
 
 type Hourly = {
+  hour: number
   temperature: number
   humidity: number
   precipitationProbability: number
@@ -71,6 +72,7 @@ export const useWeatherApi = async () => {
       const index = dateDelta * 24 + date.getHours()
 
       out[index] = {
+        hour: date.getHours(),
         temperature: data.hourly.temperature_2m[i],
         humidity: data.hourly.relative_humidity_2m[i],
         precipitationProbability: data.hourly.precipitation_probability[i],

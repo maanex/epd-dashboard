@@ -58,17 +58,6 @@ export function drawDayview(weather: WeatherApi): Renderer {
           .sized(hourWidth - part, height)
           .fill('lighter')
       }
-
-      // paint.newRect()
-      //   .from(hourWidth * hour, height - (hourWeather.temperature - temperatureMin) / temperatureDelta * height)
-      //   .sized(hourWidth, 1)
-      //   .fill('medium')
-
-      if (hour !== 0) {
-        paint
-          .newRect(hourWidth * hour, 0, (hour + firstHour) % 6 === 0 ? 2 : 1, height)
-          .fill('black')
-      }
     }
 
     const tempUpper = ~~(height * 0.1)
@@ -80,18 +69,19 @@ export function drawDayview(weather: WeatherApi): Renderer {
       const rightValue = hourly[hour === (hourCount - 1) ? (hourCount - 1) : (hour + 1)].temperature
       const hourWidthHalf = hourWidth/2
 
-      let x = 0
-      let y = 0
-      let p = 0
-      let g = 0
-      let w = 0
+      let x = 0, y = 0, p = 0, g = 0, w = 0
       for (let xi = 0; xi < hourWidthHalf; xi++) {
         x = xi + hourWidth * hour
         p = xi / hourWidthHalf
         g = (leftValue + centerValue) / 2
         w = g + Easings.easeOutQuad(p) * (centerValue - g)
         y = tempLower - tempVar * (w - temperatureMin) / temperatureDelta
+        paint.setPixel(x, y-2, 1)
+        paint.setPixel(x, y-1, 1)
         paint.setPixel(x, y, 0)
+        paint.setPixel(x, y+1, 0)
+        paint.setPixel(x, y+2, 1)
+        paint.setPixel(x, y+3, 1)
       }
       for (let xi = hourWidthHalf; xi < hourWidth; xi++) {
         x = xi + hourWidth * hour
@@ -99,21 +89,56 @@ export function drawDayview(weather: WeatherApi): Renderer {
         g = (centerValue + rightValue) / 2
         w = centerValue + Easings.easeInQuad(p) * (g - centerValue)
         y = tempLower - tempVar * (w - temperatureMin) / temperatureDelta
+        paint.setPixel(x, y-2, 1)
+        paint.setPixel(x, y-1, 1)
         paint.setPixel(x, y, 0)
+        paint.setPixel(x, y+1, 0)
+        paint.setPixel(x, y+2, 1)
+        paint.setPixel(x, y+3, 1)
+      }
+
+      if (hour !== 0) {
+        paint.newRect()
+          .from(hourWidth * hour, 0)
+          .sized((hour + firstHour) % 6 === 0 ? 2 : 1, height)
+          .fill((hour + firstHour) % 6 === 0 ? 'black' : 'medium', 'darken')
       }
     }
 
     const currentHour = new Date().getHours()
     const currentX = hourWidth * (currentHour - firstHour) + hourWidth / 2
     if (currentX >= 0 && currentX < width) {
-      const size = 16
-      paint.newRect(currentX - size/2, height - 5 - size, size, size)
-        .round(-size/2)
+      const size = 12
+      const y = tempLower - tempVar * (hourly[currentHour - firstHour].temperature - temperatureMin) / temperatureDelta - size/2 + 1
+      paint.newRect()
+        .from(currentX - size/2, y)
+        .sized(size, size)
+        .round(-4)
         .inset(-2)
         .fill('white')
         .inset(2)
         .fill('black')
     }
+
+    const warmestHour = hourly.reduce((a, b) => a.temperature > b.temperature ? a : b)
+    const warmestHourIdx = ((warmestHour.hour < firstHour) ? (warmestHour.hour + 24) : warmestHour.hour) - firstHour
+    const coldestHour = hourly.reduce((a, b) => a.temperature < b.temperature ? a : b)
+    const coldestHourIdx = ((coldestHour.hour < firstHour) ? (coldestHour.hour + 24) : coldestHour.hour) - firstHour
+    paint
+      .newText(warmestHour.temperature.toFixed(1) + '°')
+      .at(warmestHourIdx * hourWidth + hourWidth / 2, tempUpper + 10)
+      .anchor('center', 'top')
+      .size(12)
+      .threshold(0.8)
+      .render('black')
+    paint
+      .newText(coldestHour.temperature.toFixed(1) + '°')
+      .at(coldestHourIdx * hourWidth + hourWidth / 2, tempLower - 10)
+      .anchor('center', 'bottom')
+      .size(12)
+      .threshold(0.8)
+      .render('black')
+
 
     paint.newRect(0, 0, width, height)
       .outline('black', 2)

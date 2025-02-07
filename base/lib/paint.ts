@@ -1,4 +1,4 @@
-import type { SKRSContext2D } from "@napi-rs/canvas"
+import { createCanvas, type SKRSContext2D } from "@napi-rs/canvas"
 
 
 type FillStyle = 'white' | 'lighter' | 'light' | 'medium' | 'dark' | 'black'
@@ -129,6 +129,80 @@ export const usePaint = (ctx: SKRSContext2D) => {
     return out
   }
 
+  function newText(text: string, x = 0, y = 0, size = 20) {
+    const data = {
+      text,
+      x,
+      y,
+      size,
+      thresh: 0.9,
+      anchorX: 'left',
+      anchorY: 'top'
+    }
+
+    const out = {
+      text: (text: string) => {
+        data.text = text
+        return out
+      },
+      at: (x: number, y: number) => {
+        data.x = ~~x
+        data.y = ~~y
+        return out
+      },
+      translate: (dx: number, dy: number) => {
+        data.x += ~~dx
+        data.y += ~~dy
+        return out
+      },
+      size: (size: number) => {
+        data.size = ~~size
+        return out
+      },
+      anchor: (x: 'left' | 'center' | 'right', y: 'top' | 'center' | 'bottom') => {
+        data.anchorX = x
+        data.anchorY = y
+        return out
+      },
+      threshold: (thresh: number) => {
+        data.thresh = thresh
+        return out
+      },
+      render: (style: FillStyle, mix?: MixMode) => {
+        ctx.font = `${data.size}px monospace`
+        const innerWidth = ~~ctx.measureText(data.text).width
+        const innerHeight = ~~(data.size * 1.2)
+        const innerCanvas = createCanvas(innerWidth, innerHeight)
+        const innerCtx = innerCanvas.getContext('2d')!
+        innerCanvas.width = innerWidth
+        innerCanvas.height = innerHeight
+        innerCtx.fillStyle = 'white'
+        innerCtx.fillRect(0, 0, innerWidth, innerHeight)
+        innerCtx.fillStyle = 'black'
+        innerCtx.font = `${data.size}px monospace`
+        innerCtx.textBaseline = 'top'
+        innerCtx.fillText(data.text, 0, 0)
+
+        let renderX = data.x
+        if (data.anchorX === 'center') renderX -= innerWidth / 2
+        if (data.anchorX === 'right') renderX -= innerWidth
+        let renderY = data.y
+        if (data.anchorY === 'center') renderY -= innerHeight / 2
+        if (data.anchorY === 'bottom') renderY -= innerHeight
+
+        const imgData = innerCtx.getImageData(0, 0, innerWidth, innerHeight)
+        for (let y = 0; y < innerHeight; y++) {
+          for (let x = 0; x < innerWidth; x++) {
+            if (imgData.data[(y * innerWidth + x) * 4] >= (data.thresh * 255)) continue
+            setPixel(renderX + x, renderY + y, rasterize(style, x, y), mix)
+          }
+        }
+        return out
+      }
+    }
+    return out
+  }
+
   function render(onlyIfChanges = false) {
     if (onlyIfChanges && !changes) return
     for (let i = 0; i < data.length; i++) {
@@ -144,6 +218,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
   return {
     setPixel,
     newRect,
+    newText,
     render
   }
 }
