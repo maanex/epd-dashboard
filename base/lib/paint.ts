@@ -22,7 +22,14 @@ export const usePaint = (ctx: SKRSContext2D) => {
 
   let changes = false
 
+  const global = {
+    translateX: 0,
+    translateY: 0
+  }
+
   function setPixel(x: number, y: number, value: 0 | 1, mix?: MixMode) {
+    x += global.translateX
+    y += global.translateY
     if (y < 0 || y >= ctx.canvas.height || x < 0 || x >= ctx.canvas.width) return
 
     if (mix === 'darken' && value === 1) return
@@ -123,7 +130,8 @@ export const usePaint = (ctx: SKRSContext2D) => {
           }
         }
         return out
-      }
+      },
+      getSize: () => ({ x: rect.x, y: rect.y, width: rect.w, height: rect.h })
     }
 
     return out
@@ -173,10 +181,11 @@ export const usePaint = (ctx: SKRSContext2D) => {
         data.thresh = thresh
         return out
       },
-      render: (style: FillStyle, mix?: MixMode) => {
+      render: <Rect extends boolean> (style: FillStyle, mix?: MixMode, returnRect?: Rect) => {
         ctx.font = `${data.size}px ${data.font}`
-        const innerWidth = ~~ctx.measureText(data.text).width
-        const innerHeight = ~~(data.size * 1.2)
+        const metrics = ctx.measureText(data.text)
+        const innerWidth = ~~(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
+        const innerHeight = ~~(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
         const innerCanvas = createCanvas(innerWidth, innerHeight)
         const innerCtx = innerCanvas.getContext('2d')!
         innerCanvas.width = innerWidth
@@ -185,8 +194,8 @@ export const usePaint = (ctx: SKRSContext2D) => {
         innerCtx.fillRect(0, 0, innerWidth, innerHeight)
         innerCtx.fillStyle = 'black'
         innerCtx.font = `${data.size}px ${data.font}`
-        innerCtx.textBaseline = 'top'
-        innerCtx.fillText(data.text, 0, 0)
+        innerCtx.textBaseline = 'alphabetic'
+        innerCtx.fillText(data.text, ~~metrics.actualBoundingBoxLeft, innerHeight - metrics.actualBoundingBoxDescent)
 
         let renderX = data.x
         if (data.anchorX === 'center') renderX -= innerWidth / 2
@@ -202,7 +211,8 @@ export const usePaint = (ctx: SKRSContext2D) => {
             setPixel(renderX + x, renderY + y, rasterize(style, x, y), mix)
           }
         }
-        return out
+
+        return (returnRect ? newRect(renderX, renderY, innerWidth, innerHeight) : out) as (Rect extends true ? ReturnType<typeof newRect> : typeof out)
       }
     }
     return out
@@ -220,7 +230,19 @@ export const usePaint = (ctx: SKRSContext2D) => {
     changes = false
   }
 
+  function transform(dx: number, dy: number) {
+    global.translateX += ~~dx
+    global.translateY += ~~dy
+  }
+
+  function clearTransform() {
+    global.translateX = 0
+    global.translateY = 0
+  }
+
   return {
+    transform,
+    clearTransform,
     setPixel,
     newRect,
     newText,

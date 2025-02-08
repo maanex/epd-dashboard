@@ -1,6 +1,7 @@
 import { useWeatherApi } from "./api/weather"
 import { RawCtx, useImage } from "./lib/image"
 import { TopicUpFull, TopicUpPart, useMqtt } from "./lib/mqtt"
+import { drawBar } from "./ui/bar"
 import { drawDayview } from "./ui/dayview"
 
 const mqtt = useMqtt()
@@ -17,15 +18,19 @@ const img = useImage()
 const dayviewHeight = 100
 img.draw(drawDayview(weather, dayviewHeight))
 
+const barHeight = 30
+img.draw(drawBar(barHeight))
+
+const takenHeight = dayviewHeight + barHeight
 img.draw(({ paint, height }) => {
   const rn = new Date()
   const text = `${rn.getHours().toString().padStart(2, '0')}:${rn.getMinutes().toString().padStart(2, '0')}`
   paint
     .newText(text)
-    .at(img.width / 2, (img.height - dayviewHeight) / 2 + dayviewHeight)
+    .at(img.width / 2, (img.height - takenHeight) / 2 + dayviewHeight)
     .anchor('center', 'center')
     .size(200)
-    // .font('Nimbus Roman')
+    .font('Nimbus Roman')
     .render('dark')
 })
 

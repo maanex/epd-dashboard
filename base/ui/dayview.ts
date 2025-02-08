@@ -23,8 +23,6 @@ export function drawDayview(weather: WeatherApi, height = 100): Renderer {
     const sunsetRelative = today.sunset.getHours() - firstHour
 
     for (let hour = 0; hour < hourCount; hour++) {
-      const hourWeather = hourly[hour]
-
       if (hour < sunriseRelative || hour > sunsetRelative) {
         paint.newRect()
           .from(hourWidth * hour, 0)
