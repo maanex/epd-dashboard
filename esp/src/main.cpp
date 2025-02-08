@@ -6,15 +6,20 @@
 #include <stdlib.h>
 
 
-void on_message(int mode, int length, byte* message) {
+void on_message(int mode, size_t length, size_t index, bool done, char* message) {
   if (mode == MODE_FULL) {
-    printf("Full! Length: %s\n", length);
-    // disp_raw_begin(800, 480);
-    // for (int i = 0; i < length; i++) {
-      // disp_raw_stream_pixels(&message[i], 800, 480, i);
-      // printf("%hhx,", message[i]);
-    // }
-    // disp_raw_render();
+    printf("Full! Length: %d\n", length);
+    if (index == 0) {
+      disp_raw_begin(800, 480);
+    }
+
+    for (int i = 0; i < length; i++) {
+      disp_raw_stream_pixels(&message[i], 800, 480, i + index);
+    }
+
+    if (done) {
+      disp_raw_render();
+    }
   } else if (mode == MODE_PART) {
     printf("PART!\n");
   }
@@ -64,10 +69,10 @@ void loop() {
     return;
   }
 
-  if (net_loop() != 0) {
-    disp_print_raw(" ERROR ON WIFI INIT! ");
-    DEV_Delay_ms(50000);
-    disp_clear();
-    return;
-  }
+  // if (net_loop() != 0) {
+  //   disp_print_raw(" ERROR ON WIFI INIT! ");
+  //   DEV_Delay_ms(50000);
+  //   disp_clear();
+  //   return;
+  // }
 }

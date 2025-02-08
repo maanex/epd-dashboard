@@ -9,8 +9,7 @@
 #define ERROR_MQTT_TIMEOUT 0xF2
 
 extern int net_init(void);
-extern int net_loop(void);
 
-extern void net_provide_callback(std::function<void(int, int, byte*)> callback);
+extern void net_provide_callback(std::function<void(int, size_t, size_t, bool, char*)> callback);
 
 #endif

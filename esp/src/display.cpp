@@ -65,13 +65,15 @@ UBYTE* disp_raw_begin(const int w, const int h) {
   return ImageBuffer;
 }
 
-void disp_raw_stream_pixels(byte* pixels, const int w, const int h, const int offset) {
+void disp_raw_stream_pixels(char* pixels, const int w, const int h, const int offset) {
   int x = 0;
   int y = 0;
+  int val = 0;
   for (int i = 0; i < 8; i++) {
     x = (offset*8 + i) % WIDTH;
     y = (offset*8 + i) / WIDTH;
-    Paint_SetPixel(x, y, pixels[i] == 0 ? BLACK : WHITE);
+    val = (pixels[0] >> i) & 1;
+    Paint_SetPixel(x, y, val == 0 ? BLACK : WHITE);
   }
 }
 
