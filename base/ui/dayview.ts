@@ -3,12 +3,10 @@ import { Easings } from "../lib/easings"
 import type { Renderer } from "../lib/image"
 
 
-const height = 100
-
 const firstHour = 6
 const lastHour = 26
 
-export function drawDayview(weather: WeatherApi): Renderer {
+export function drawDayview(weather: WeatherApi, height = 100): Renderer {
   return ({ paint, width }) => {
     const hourCount = (lastHour - firstHour)
 

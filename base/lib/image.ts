@@ -79,6 +79,8 @@ export const useImage = () => {
 
   return {
     [RawCtx]: ctx,
+    width: ScreenWidth,
+    height: ScreenHeight,
     draw,
     renderFullBw,
     exportFullBw

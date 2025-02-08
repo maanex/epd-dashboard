@@ -13,11 +13,20 @@ mqtt.subscribeStat(message => {
 const weather = await useWeatherApi()
 
 const img = useImage()
-img.draw(drawDayview(weather))
-img.draw(({ ctx, height }) => {
-  ctx.fillStyle = 'black'
-  ctx.font = '30px Arial'
-  ctx.fillText('hello', 10, height - 40)
+
+const dayviewHeight = 100
+img.draw(drawDayview(weather, dayviewHeight))
+
+img.draw(({ paint, height }) => {
+  const rn = new Date()
+  const text = `${rn.getHours().toString().padStart(2, '0')}:${rn.getMinutes().toString().padStart(2, '0')}`
+  paint
+    .newText(text)
+    .at(img.width / 2, (img.height - dayviewHeight) / 2 + dayviewHeight)
+    .anchor('center', 'center')
+    .size(200)
+    // .font('Nimbus Roman')
+    .render('dark')
 })
 
 // const rendered = img.renderFullBw()

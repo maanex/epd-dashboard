@@ -135,6 +135,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
       x,
       y,
       size,
+      font: 'monospace',
       thresh: 0.9,
       anchorX: 'left',
       anchorY: 'top'
@@ -159,6 +160,10 @@ export const usePaint = (ctx: SKRSContext2D) => {
         data.size = ~~size
         return out
       },
+      font: (font: string) => {
+        data.font = font
+        return out
+      },
       anchor: (x: 'left' | 'center' | 'right', y: 'top' | 'center' | 'bottom') => {
         data.anchorX = x
         data.anchorY = y
@@ -169,7 +174,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
         return out
       },
       render: (style: FillStyle, mix?: MixMode) => {
-        ctx.font = `${data.size}px monospace`
+        ctx.font = `${data.size}px ${data.font}`
         const innerWidth = ~~ctx.measureText(data.text).width
         const innerHeight = ~~(data.size * 1.2)
         const innerCanvas = createCanvas(innerWidth, innerHeight)
@@ -179,7 +184,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
         innerCtx.fillStyle = 'white'
         innerCtx.fillRect(0, 0, innerWidth, innerHeight)
         innerCtx.fillStyle = 'black'
-        innerCtx.font = `${data.size}px monospace`
+        innerCtx.font = `${data.size}px ${data.font}`
         innerCtx.textBaseline = 'top'
         innerCtx.fillText(data.text, 0, 0)
 
