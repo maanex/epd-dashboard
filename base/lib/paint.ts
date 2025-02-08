@@ -1,17 +1,27 @@
 import { createCanvas, type SKRSContext2D } from "@napi-rs/canvas"
 
 
-type FillStyle = 'white' | 'lighter' | 'light' | 'medium' | 'dark' | 'black'
+type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black'
 type MixMode = 'default' | 'darken' | 'lighten' | 'invert'
 
 function rasterize(style: FillStyle, x: number, y: number) {
   if (style === 'black') return 0
   if (style === 'white') return 1
+  if (style === 'lightest') return ((x + y*74) % 34) === 0 ? 0 : 1
   if (style === 'lighter') return ((x + y*19) % 8) === 0 ? 0 : 1
   if (style === 'light') return ((x + y*2) % 4) === 0 ? 0 : 1
   if (style === 'medium') return ((x + y) % 2) === 0 ? 0 : 1
   if (style === 'dark') return ((x + y*2) % 4) === 0 ? 1 : 0
   return 0
+}
+
+function rotatePoint(x: number, y: number, angle: number, cx: number, cy: number) {
+  const rad = (angle * Math.PI) / 180
+  const dx = x - cx
+  const dy = y - cy
+  const newX = cx + dx * Math.cos(rad) - dy * Math.sin(rad)
+  const newY = cy + dx * Math.sin(rad) + dy * Math.cos(rad)
+  return [newX, newY]
 }
 
 export const usePaint = (ctx: SKRSContext2D) => {
@@ -182,7 +192,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
         return out
       },
       render: <Rect extends boolean> (style: FillStyle, mix?: MixMode, returnRect?: Rect) => {
-        ctx.font = `${data.size}px ${data.font}`
+        ctx.font = `${data.size}px '${data.font}'`
         const metrics = ctx.measureText(data.text)
         const innerWidth = ~~(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
         const innerHeight = ~~(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
@@ -193,7 +203,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
         innerCtx.fillStyle = 'white'
         innerCtx.fillRect(0, 0, innerWidth, innerHeight)
         innerCtx.fillStyle = 'black'
-        innerCtx.font = `${data.size}px ${data.font}`
+        innerCtx.font = `${data.size}px '${data.font}'`
         innerCtx.textBaseline = 'alphabetic'
         innerCtx.fillText(data.text, ~~metrics.actualBoundingBoxLeft, innerHeight - metrics.actualBoundingBoxDescent)
 
@@ -213,6 +223,105 @@ export const usePaint = (ctx: SKRSContext2D) => {
         }
 
         return (returnRect ? newRect(renderX, renderY, innerWidth, innerHeight) : out) as (Rect extends true ? ReturnType<typeof newRect> : typeof out)
+      },
+      renderOutline: (style: FillStyle, size: number, mix?: MixMode) => {
+        ctx.font = `${data.size}px '${data.font}'`
+        const metrics = ctx.measureText(data.text)
+        const innerWidth = ~~(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
+        const innerHeight = ~~(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
+        const innerCanvas = createCanvas(innerWidth, innerHeight)
+        const innerCtx = innerCanvas.getContext('2d')!
+        innerCanvas.width = innerWidth + size * 2
+        innerCanvas.height = innerHeight + size * 2
+        innerCtx.fillStyle = 'white'
+        innerCtx.fillRect(0, 0, innerWidth, innerHeight)
+        innerCtx.fillStyle = 'black'
+        innerCtx.font = `${data.size}px '${data.font}'`
+        innerCtx.textBaseline = 'alphabetic'
+        innerCtx.fillText(data.text, ~~metrics.actualBoundingBoxLeft, innerHeight - metrics.actualBoundingBoxDescent)
+
+        let renderX = data.x
+        if (data.anchorX === 'center') renderX -= innerWidth / 2
+        if (data.anchorX === 'right') renderX -= innerWidth
+        let renderY = data.y
+        if (data.anchorY === 'center') renderY -= innerHeight / 2
+        if (data.anchorY === 'bottom') renderY -= innerHeight
+
+        const imgData = innerCtx.getImageData(0, 0, innerWidth, innerHeight)
+        for (let y = 0; y < innerHeight; y++) {
+          for (let x = 0; x < innerWidth; x++) {
+            if (imgData.data[(y * innerWidth + x) * 4] >= (data.thresh * 255)) continue
+
+            for (let ix = -size; ix <= size; ix++) {
+              for (let iy = -size; iy <= size; iy++) {
+                if (Math.sqrt(ix**2 + iy**2) > size**2) continue
+                setPixel(renderX + x + ix, renderY + y + iy, rasterize(style, x + ix, y + iy), mix)
+              }
+            }
+          }
+        }
+
+        return out
+      }
+    }
+    return out
+  }
+
+  function newTriangle(x = 0, y = 0, size = 20) {
+    const tri = {
+      x,
+      y,
+      size,
+      rot: 0
+    }
+
+    const out = {
+      at: (x: number, y: number) => {
+        tri.x = ~~x
+        tri.y = ~~y
+        return out
+      },
+      translate: (dx: number, dy: number) => {
+        tri.x += ~~dx
+        tri.y += ~~dy
+        return out
+      },
+      size: (size: number) => {
+        tri.size = ~~size
+        return out
+      },
+      rotate: (rot: number) => {
+        tri.rot = rot
+        return out
+      },
+      fill: (style: FillStyle, mix?: MixMode) => {
+        // chatgpt ass function
+        const x0 = tri.x
+        const y0 = tri.y - tri.size
+        const x1 = tri.x - (tri.size * Math.cos(Math.PI / 6))
+        const y1 = tri.y + (tri.size * Math.sin(Math.PI / 6))
+        const x2 = tri.x + (tri.size * Math.cos(Math.PI / 6))
+        const y2 = y1
+
+        const [x0r, y0r] = rotatePoint(x0, y0, tri.rot, tri.x, tri.y)
+        const [x1r, y1r] = rotatePoint(x1, y1, tri.rot, tri.x, tri.y)
+        const [x2r, y2r] = rotatePoint(x2, y2, tri.rot, tri.x, tri.y)
+
+        const edgeFunction = (ax: number, ay: number, bx: number, by: number, px: number, py: number) => (px - ax) * (by - ay) - (py - ay) * (bx - ax)
+
+        const minX = Math.min(x0r, x1r, x2r)
+        const maxX = Math.max(x0r, x1r, x2r)
+        const minY = Math.min(y0r, y1r, y2r)
+        const maxY = Math.max(y0r, y1r, y2r)
+      
+        for (let y = minY; y <= maxY; y++) {
+          for (let x = minX; x <= maxX; x++) {
+            let w0 = edgeFunction(x1r, y1r, x2r, y2r, x, y)
+            let w1 = edgeFunction(x2r, y2r, x0r, y0r, x, y)
+            let w2 = edgeFunction(x0r, y0r, x1r, y1r, x, y)
+            if (w0 >= 0 && w1 >= 0 && w2 >= 0) setPixel(x, y, rasterize(style, x, y), mix)
+          }
+        }
       }
     }
     return out
@@ -246,6 +355,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
     setPixel,
     newRect,
     newText,
+    newTriangle,
     render
   }
 }

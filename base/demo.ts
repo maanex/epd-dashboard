@@ -3,6 +3,12 @@ import { RawCtx, useImage } from "./lib/image"
 import { TopicUpFull, TopicUpPart, useMqtt } from "./lib/mqtt"
 import { drawBar } from "./ui/bar"
 import { drawDayview } from "./ui/dayview"
+import { GlobalFonts } from '@napi-rs/canvas'
+import * as path from 'path'
+import { drawClock } from "./ui/clock"
+
+GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'), 'Modak')
+console.log(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'))
 
 const mqtt = useMqtt()
 await mqtt.init()
@@ -22,17 +28,7 @@ const barHeight = 30
 img.draw(drawBar(barHeight))
 
 const takenHeight = dayviewHeight + barHeight
-img.draw(({ paint, height }) => {
-  const rn = new Date()
-  const text = `${rn.getHours().toString().padStart(2, '0')}:${rn.getMinutes().toString().padStart(2, '0')}`
-  paint
-    .newText(text)
-    .at(img.width / 2, (img.height - takenHeight) / 2 + dayviewHeight)
-    .anchor('center', 'center')
-    .size(200)
-    .font('Modak')
-    .render('dark')
-})
+img.draw(drawClock(img.height - takenHeight, dayviewHeight))
 
 // const rendered = img.renderFullBw()
 await img.exportFullBw('test.png')
