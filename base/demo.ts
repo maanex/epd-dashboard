@@ -30,7 +30,7 @@ img.draw(({ paint, height }) => {
     .at(img.width / 2, (img.height - takenHeight) / 2 + dayviewHeight)
     .anchor('center', 'center')
     .size(200)
-    .font('Nimbus Roman')
+    .font('Modak')
     .render('dark')
 })
 
