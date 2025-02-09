@@ -6,7 +6,6 @@ import { drawDayview } from "./ui/dayview"
 import { GlobalFonts } from '@napi-rs/canvas'
 import * as path from 'path'
 import { drawClock } from "./ui/clock"
-import { Compression } from "./lib/compression"
 
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'), 'Modak')
 
@@ -30,16 +29,14 @@ img.draw(drawBar(barHeight))
 const takenHeight = dayviewHeight + barHeight
 img.draw(drawClock(img.height - takenHeight, dayviewHeight))
 
-process.exit(0) // so we don't run all of the below at once
-
 
 // Export image locally
 await img.exportFullBw('test.png')
 
-// Render image on epd
-const rendered = img.renderFullBw()
-mqtt.sendBinary(TopicUpFull, rendered)
+// // Render image on epd
+// const rendered = img.renderFullBw()
+// mqtt.sendBinary(TopicUpFull, rendered)
 
-// Clear epd screen
-mqtt.sendBinary(TopicUpFull, new Buffer(0))
+// // Clear epd screen
+// mqtt.sendBinary(TopicUpFull, new Buffer(0))
 
