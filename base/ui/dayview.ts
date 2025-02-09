@@ -58,14 +58,40 @@ export function drawDayview(weather: WeatherApi, height = 100): Renderer {
 
     const tempUpper = ~~(height * 0.1)
     const tempLower = ~~(height - height * 0.2)
+    const rainHeight = ~~(height * 0.2)
     const tempVar = tempLower - tempUpper
-    for (let hour = 0; hour < hourCount; hour++) {
-      const leftValue = hourly[hour === 0 ? 0 : (hour - 1)].temperature
-      const centerValue = hourly[hour].temperature
-      const rightValue = hourly[hour === (hourCount - 1) ? (hourCount - 1) : (hour + 1)].temperature
-      const hourWidthHalf = hourWidth/2
+    const hourWidthHalf = hourWidth/2
 
-      let x = 0, y = 0, p = 0, g = 0, w = 0
+    let x = 0, y = 0, p = 0, g = 0, w = 0
+    let leftValue = 0, centerValue = 0, rightValue = 0
+    for (let hour = 0; hour < hourCount; hour++) {
+      // Rain
+      leftValue = hourly[hour === 0 ? 0 : (hour - 1)].precipitation
+      centerValue = hourly[hour].precipitation
+      rightValue = hourly[hour === (hourCount - 1) ? (hourCount - 1) : (hour + 1)].precipitation
+      for (let xi = 0; xi < hourWidthHalf; xi++) {
+        x = xi + hourWidth * hour
+        p = xi / hourWidthHalf
+        g = (leftValue + centerValue) / 2
+        w = g + Easings.easeOutQuad(p) * (centerValue - g)
+        y = height - rainHeight * w / 100
+        for (let yi = y; yi < height; yi++)
+          paint.setPixel(x, yi, 0)
+      }
+      for (let xi = hourWidthHalf; xi < hourWidth; xi++) {
+        x = xi + hourWidth * hour
+        p = (xi - hourWidthHalf) / hourWidthHalf
+        g = (centerValue + rightValue) / 2
+        w = centerValue + Easings.easeInQuad(p) * (g - centerValue)
+        y = height - rainHeight * w / 100
+        for (let yi = y; yi < height; yi++)
+          paint.setPixel(x, yi, 0)
+      }
+
+      // Temperature
+      leftValue = hourly[hour === 0 ? 0 : (hour - 1)].temperature
+      centerValue = hourly[hour].temperature
+      rightValue = hourly[hour === (hourCount - 1) ? (hourCount - 1) : (hour + 1)].temperature
       for (let xi = 0; xi < hourWidthHalf; xi++) {
         x = xi + hourWidth * hour
         p = xi / hourWidthHalf

@@ -58,7 +58,7 @@ export function drawBar(weather: WeatherApi, barHeight = 50): Renderer {
 
     // wettervorhersage für die nächsten 7 (idealerweise 10) tag + wochenende / feiertage
     for (let i = 0; i < numDays; i++) {
-      console.log(weather.getDay(i))
+      // console.log(weather.getDay(i))
       paint
         .newRect(i * (dayWidth + dayPadding), 0, dayWidth, barHeight - padding*2)
         .outline('light')
