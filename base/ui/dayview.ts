@@ -135,6 +135,23 @@ export function drawDayview(weather: WeatherApi, height = 100): Renderer {
       .threshold(0.8)
       .render('black')
 
+    for (let h6block = Math.floor(firstHour / 6); h6block <= Math.ceil(lastHour / 6); h6block++) {
+      if (warmestHour.hour < h6block * 6 || warmestHour.hour >= (h6block + 1) * 6) continue
+      if (coldestHour.hour < h6block * 6 || coldestHour.hour >= (h6block + 1) * 6) continue
+
+      const hourId = h6block * 6 + 1 + ~~(Math.random() * 4)
+      const hourIdx = ((hourId < firstHour) ? (hourId + 24) : hourId) - firstHour
+      const hour = hourly[hourId]
+
+      paint
+        .newText(hour.temperature.toFixed(1) + '°')
+        .at(hourIdx * hourWidth + hourWidth / 2, tempLower - 10)
+        .anchor('center', 'bottom')
+        .size(12)
+        .threshold(0.8)
+        .render('black')
+    }
+
 
     paint.newRect(0, 0, width, height)
       .outline('black', 2)
