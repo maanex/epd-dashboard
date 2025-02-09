@@ -24,7 +24,7 @@ const dayviewHeight = 100
 img.draw(drawDayview(weather, dayviewHeight))
 
 const barHeight = 30
-img.draw(drawBar(barHeight))
+img.draw(drawBar(weather, barHeight))
 
 const takenHeight = dayviewHeight + barHeight
 img.draw(drawClock(img.height - takenHeight, dayviewHeight))

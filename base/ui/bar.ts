@@ -1,4 +1,4 @@
-import { Easings } from "../lib/easings"
+import type { WeatherApi } from "../api/weather"
 import type { Renderer } from "../lib/image"
 import type { usePaint } from "../lib/paint"
 
@@ -27,12 +27,13 @@ const left: Element[] = [
       .newText('hehehehehehe :3')
       .anchor('left', 'bottom')
       .at(0, height)
-      .render('white', 'default', true)
+      .render('white')
+      .toRect()
     return bounds.getSize().width
   },
 ]
 
-export function drawBar(barHeight = 50): Renderer {
+export function drawBar(weather: WeatherApi, barHeight = 50): Renderer {
   return ({ paint, width, height }) => {
     paint.transform(0, height - barHeight)
 
@@ -40,12 +41,27 @@ export function drawBar(barHeight = 50): Renderer {
       .fill('black')
 
     const padding = 5
-    paint.transform(padding, padding)
+    paint.transform(padding*2, padding)
     for (const el of left) {
       const taken = el({ paint, height: barHeight - padding*2, padding })
-      paint.transform(taken + padding, -padding)
+      paint.transform(taken + padding*2, -padding)
       paint.newRect(0, 0, 1, barHeight).fill('medium')
-      paint.transform(padding + 1, padding)
+      paint.transform(padding*2 + 1, padding)
+    }
+
+    paint.clearTransform()
+    const numDays = 7
+    const dayWidth = barHeight - padding*2
+    const dayPadding = 5
+    const startX = width - numDays * (dayWidth + dayPadding) - dayPadding + padding
+    paint.transform(startX, padding + height - barHeight)
+
+    // wettervorhersage für die nächsten 7 (idealerweise 10) tag + wochenende / feiertage
+    for (let i = 0; i < numDays; i++) {
+      console.log(weather.getDay(i))
+      paint
+        .newRect(i * (dayWidth + dayPadding), 0, dayWidth, barHeight - padding*2)
+        .outline('light')
     }
   }
 }

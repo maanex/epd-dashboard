@@ -125,30 +125,50 @@ export function drawDayview(weather: WeatherApi, height = 100): Renderer {
       .at(warmestHourIdx * hourWidth + hourWidth / 2, tempUpper + 10)
       .anchor('center', 'top')
       .size(12)
-      .threshold(0.8)
+      .threshold(0.9)
+      .getRect(r => r
+        .inset(-2)
+        .round(4)
+        .fill('white')
+      )
       .render('black')
     paint
       .newText(coldestHour.temperature.toFixed(1) + '°')
       .at(coldestHourIdx * hourWidth + hourWidth / 2, tempLower - 10)
       .anchor('center', 'bottom')
       .size(12)
-      .threshold(0.8)
+      .threshold(0.9)
+      .getRect(r => r
+        .inset(-2)
+        .round(4)
+        .fill('white')
+      )
       .render('black')
 
-    for (let h6block = Math.floor(firstHour / 6); h6block <= Math.ceil(lastHour / 6); h6block++) {
-      if (warmestHour.hour < h6block * 6 || warmestHour.hour >= (h6block + 1) * 6) continue
-      if (coldestHour.hour < h6block * 6 || coldestHour.hour >= (h6block + 1) * 6) continue
+    for (let h6block = Math.floor(firstHour / 6); h6block <= Math.floor(lastHour / 6); h6block++) {
+      if (warmestHour.hour >= h6block * 6 && warmestHour.hour < (h6block + 1) * 6) continue
+      if (coldestHour.hour >= h6block * 6 && coldestHour.hour < (h6block + 1) * 6) continue
 
-      const hourId = h6block * 6 + 1 + ~~(Math.random() * 4)
+      const hourId = h6block * 6 + new Date().getDay() % 4 + 1
       const hourIdx = ((hourId < firstHour) ? (hourId + 24) : hourId) - firstHour
-      const hour = hourly[hourId]
+      const hour = hourly[hourIdx]
+      if (!hour) continue
+
+      const yRel = (hour.temperature - temperatureMin) / temperatureDelta
+      const y = tempLower - tempVar * yRel
+      const yOff = yRel < 0.5 ? -15 : 15
 
       paint
         .newText(hour.temperature.toFixed(1) + '°')
-        .at(hourIdx * hourWidth + hourWidth / 2, tempLower - 10)
-        .anchor('center', 'bottom')
+        .at(hourIdx * hourWidth + hourWidth / 2, y + yOff)
+        .anchor('center', 'center')
         .size(12)
-        .threshold(0.8)
+        .threshold(0.65)
+        .getRect(r => r
+          .inset(-2)
+          .round(4)
+          .fill('white')
+        )
         .render('black')
     }
 

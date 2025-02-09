@@ -191,7 +191,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
         data.thresh = thresh
         return out
       },
-      render: <Rect extends boolean> (style: FillStyle, mix?: MixMode, returnRect?: Rect) => {
+      render: (style: FillStyle, mix?: MixMode) => {
         ctx.font = `${data.size}px '${data.font}'`
         const metrics = ctx.measureText(data.text)
         const innerWidth = ~~(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
@@ -222,7 +222,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
           }
         }
 
-        return (returnRect ? newRect(renderX, renderY, innerWidth, innerHeight) : out) as (Rect extends true ? ReturnType<typeof newRect> : typeof out)
+        return out
       },
       renderOutline: (style: FillStyle, size: number, mix?: MixMode) => {
         ctx.font = `${data.size}px '${data.font}'`
@@ -261,6 +261,25 @@ export const usePaint = (ctx: SKRSContext2D) => {
           }
         }
 
+        return out
+      },
+      toRect: () => {
+        ctx.font = `${data.size}px '${data.font}'`
+        const metrics = ctx.measureText(data.text)
+        const innerWidth = ~~(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
+        const innerHeight = ~~(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
+
+        let renderX = data.x
+        if (data.anchorX === 'center') renderX -= innerWidth / 2
+        if (data.anchorX === 'right') renderX -= innerWidth
+        let renderY = data.y
+        if (data.anchorY === 'center') renderY -= innerHeight / 2
+        if (data.anchorY === 'bottom') renderY -= innerHeight
+
+        return newRect(renderX, renderY, innerWidth, innerHeight) 
+      },
+      getRect: (fn: (rect: ReturnType<typeof newRect>) => any) => {
+        fn(out.toRect())
         return out
       }
     }
