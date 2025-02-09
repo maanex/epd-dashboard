@@ -30,13 +30,13 @@ export const useImage = () => {
   ctx.fillStyle = 'white'
   ctx.fillRect(0, 0, ScreenWidth, ScreenHeight)
 
-  function draw(renderer: Renderer) {
-    const paint = usePaint(ctx)
+  function draw(renderer: Renderer, frameX?: number, frameY?: number, frameWidth?: number, frameHeight?: number) {
+    const paint = usePaint(ctx, frameX, frameY, frameWidth, frameHeight)
     renderer({
       ctx,
       paint,
-      width: ScreenWidth,
-      height: ScreenHeight
+      width: frameWidth ?? ScreenWidth,
+      height: frameHeight ?? ScreenHeight
     })
     paint.render(true)
   }

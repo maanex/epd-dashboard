@@ -1,9 +1,8 @@
 import type { Renderer } from "../lib/image"
 
 
-export function drawClock(height: number, offsetTop: number): Renderer {
-  return ({ paint, width }) => {
-    paint.transform(0, offsetTop)
+export function drawClock(): Renderer {
+  return ({ paint, width, height }) => {
 
     paint.newRect(0, 0, width, height)
       .fill('lightest')
@@ -20,10 +19,10 @@ export function drawClock(height: number, offsetTop: number): Renderer {
       .font('Modak')
       .threshold(0.9)
       .translate(shadowDist, shadowDist)
-      .render('dark', 'default', false)
+      .render('dark')
       .translate(-shadowDist, -shadowDist)
       .renderOutline('black', 4)
       .renderOutline('white', 2)
-      .render('medium', 'default', false)
+      .render('medium')
   }
 }

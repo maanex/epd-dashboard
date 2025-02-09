@@ -21,13 +21,31 @@ const weather = await useWeatherApi()
 const img = useImage()
 
 const dayviewHeight = 100
-img.draw(drawDayview(weather, dayviewHeight))
-
 const barHeight = 30
-img.draw(drawBar(weather, barHeight))
 
-const takenHeight = dayviewHeight + barHeight
-img.draw(drawClock(img.height - takenHeight, dayviewHeight))
+img.draw(
+  drawDayview(weather),
+  0,
+  0,
+  img.width,
+  dayviewHeight
+)
+
+img.draw(
+  drawClock(),
+  0,
+  dayviewHeight,
+  img.width,
+  img.height - dayviewHeight - barHeight
+)
+
+img.draw(
+  drawBar(weather),
+  0,
+  img.height - barHeight,
+  img.width,
+  barHeight
+)
 
 
 // Export image locally

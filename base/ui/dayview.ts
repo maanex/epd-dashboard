@@ -6,8 +6,8 @@ import type { Renderer } from "../lib/image"
 const firstHour = 6
 const lastHour = 26
 
-export function drawDayview(weather: WeatherApi, height = 100): Renderer {
-  return ({ paint, width }) => {
+export function drawDayview(weather: WeatherApi): Renderer {
+  return ({ paint, width, height }) => {
     const hourCount = (lastHour - firstHour)
 
     const today = weather.getToday()

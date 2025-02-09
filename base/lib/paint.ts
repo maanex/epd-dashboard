@@ -24,10 +24,10 @@ function rotatePoint(x: number, y: number, angle: number, cx: number, cy: number
   return [newX, newY]
 }
 
-export const usePaint = (ctx: SKRSContext2D) => {
-  const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height)
-  const data = new Uint8Array(ctx.canvas.width * ctx.canvas.height)
-  for (let i = 0; i < (ctx.canvas.width * ctx.canvas.height); i++)
+export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth = ctx.canvas.width, screenHeight = ctx.canvas.height) => {
+  const imgData = ctx.getImageData(startX, startY, screenWidth, screenHeight)
+  const data = new Uint8Array(screenWidth * screenHeight)
+  for (let i = 0; i < (screenWidth * screenHeight); i++)
     data[i] = imgData.data[i*4] >= 128 ? 1 : 0
 
   let changes = false
@@ -40,16 +40,16 @@ export const usePaint = (ctx: SKRSContext2D) => {
   function setPixel(x: number, y: number, value: 0 | 1, mix?: MixMode) {
     x += global.translateX
     y += global.translateY
-    if (y < 0 || y >= ctx.canvas.height || x < 0 || x >= ctx.canvas.width) return
+    if (y < 0 || y >= screenHeight || x < 0 || x >= screenWidth) return
 
     if (mix === 'darken' && value === 1) return
     if (mix === 'lighten' && value === 0) return
 
     if (mix === 'invert') {
       if (value === 1) return
-      data[~~y * ctx.canvas.width + ~~x] = 1 - data[~~y * ctx.canvas.width + ~~x]
+      data[~~y * screenWidth + ~~x] = 1 - data[~~y * screenWidth + ~~x]
     } else {
-      data[~~y * ctx.canvas.width + ~~x] = value
+      data[~~y * screenWidth + ~~x] = value
     }
 
     changes = true
@@ -354,7 +354,7 @@ export const usePaint = (ctx: SKRSContext2D) => {
       imgData.data[i*4+2] = data[i] * 255
       imgData.data[i*4+3] = 255
     }
-    ctx.putImageData(imgData, 0, 0)
+    ctx.putImageData(imgData, startX, startY)
     changes = false
   }
 
