@@ -156,7 +156,8 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       font: 'monospace',
       thresh: 0.9,
       anchorX: 'left',
-      anchorY: 'top'
+      anchorY: 'top',
+      anchorSnap: 0
     }
 
     const out = {

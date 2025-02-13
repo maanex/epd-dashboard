@@ -39,13 +39,15 @@ export namespace ImgDiff {
   }
 
   export function copyBounds(src: Buffer, dest: Buffer, offset: number, bounds: { x: number, y: number, w: number, h: number }, width: number) {
-    for (let i = 0; i < bounds.h; i++) {
-      src.copy(
-        dest,
-        offset + i * bounds.w,
-        (bounds.y + i) * width + bounds.x,
-        bounds.w
-      )
+    let i = 0;
+    for (let x = bounds.x; x < bounds.x + bounds.w; x++) {
+      for (let y = bounds.y; y < bounds.y + bounds.h; y++) {
+        const idx = x + y * width
+        const byte = ~~(idx / 8)
+        const bit = idx % 8
+        dest[offset + i] = (src[byte] >> bit) & 1
+        i++
+      }
     }
   }
 

@@ -50,8 +50,11 @@ function drawScreen() {
 }
 
 let lastRendered: Buffer | null = null
-// let mutex
+let lastChange = 0
 async function drawAndUpdate(forceFullUpdate: boolean) {
+  if (Date.now() - lastChange < 5000)
+    return
+
   const img = drawScreen()
   const rendered = img.renderFullBw()
   await img.exportFullBw('test.png')
@@ -76,31 +79,29 @@ async function drawAndUpdate(forceFullUpdate: boolean) {
     return
   }
 
-  const buff = Buffer.alloc(8 + bounds.w * bounds.h)
+  const buff = Buffer.alloc(8 + Math.ceil(bounds.w * bounds.h / 8))
   buff.writeUInt16BE(bounds.x, 0)
   buff.writeUInt16BE(bounds.y, 2)
   buff.writeUInt16BE(bounds.w, 4)
   buff.writeUInt16BE(bounds.h, 6)
   ImgDiff.copyBounds(diff, buff, 8, bounds, Const.ScreenWidth)
-//  mqtt.sendBinary(TopicUpPart, buff)
+  // mqtt.sendBinary(TopicUpPart, buff)
 }
 
 async function run() {
   console.log('First')
   await drawAndUpdate(false)
+  await new Promise(resolve => setTimeout(resolve, 7000))
   console.log('Second')
   await drawAndUpdate(false)
 }
 run()
 
 
-// Export image locally
-// await img.exportFullBw('test.png')
 
-// // Render image on epd
-// const rendered = img.renderFullBw()
-// mqtt.sendBinary(TopicUpFull, rendered)
+// TODO turn off:
+// EPD_7IN5_V2_Sleep
 
 // // Clear epd screen
-// mqtt.sendBinary(TopicUpFull, new Buffer(0))
+mqtt.sendBinary(TopicUpFull, new Buffer(0))
 

@@ -77,6 +77,18 @@ void disp_raw_stream_pixels(char* pixels, const int w, const int h, const int of
   }
 }
 
-void disp_raw_render(void) {
+void disp_raw_render_full(void) {
   EPD_7IN5_V2_Display(ImageBuffer);
+}
+
+void disp_raw_render_part(int x, int y, int w, int h) {
+  EPD_7IN5_V2_Display_Part(ImageBuffer, x, y, x + w, y + h);
+}
+
+void disp_init_full(void) {
+  EPD_7IN5_V2_Init();
+}
+
+void disp_init_part(void) {
+  EPD_7IN5_V2_Init_Part();
 }
