@@ -2,12 +2,11 @@ import { createCanvas, type SKRSContext2D } from '@napi-rs/canvas'
 import { promises } from 'fs'
 import { join } from 'path'
 import { usePaint } from './paint'
+import { Const } from './const'
 
 
 export const RawCtx = Symbol('RawCtx')
 
-export const ScreenWidth = 800
-export const ScreenHeight = 480
 
 export const Color = {
   white: '#ffffff',
@@ -24,6 +23,7 @@ export type Renderer = (img: {
 }) => void
 
 export const useImage = () => {
+  const { ScreenWidth, ScreenHeight } = Const
   const canvas = createCanvas(ScreenWidth, ScreenHeight)
   const ctx = canvas.getContext('2d')
 

@@ -7,11 +7,30 @@ export function drawClock(): Renderer {
     paint.newRect(0, 0, width, height)
       .fill('lightest')
 
-    const rn = new Date()
+    const rn = new Date(Date.now() + Math.random() * 600000)
+    // const rn = new Date()
     const text = `${rn.getHours().toString().padStart(2, '0')}:${rn.getMinutes().toString().padStart(2, '0')}`
     const shadowDist = 10
 
-    paint
+    /* This renders the clock centered in the middle of the screen
+     * This looks great but it means partial updates most often have
+     * to update the whole text as the font is not monospaced
+     */
+    // paint
+    //   .newText(text)
+    //   .at(width / 2, (height) / 2)
+    //   .anchor('center', 'center')
+    //   .size(200)
+    //   .font('Modak')
+    //   .threshold(0.9)
+    //   .translate(shadowDist, shadowDist)
+    //   .render('dark')
+    //   .translate(-shadowDist, -shadowDist)
+    //   .renderOutline('black', 4)
+    //   .renderOutline('white', 2)
+    //   .render('medium')
+
+    console.log(paint
       .newText(text)
       .at(width / 2, (height) / 2)
       .anchor('center', 'center')
@@ -24,5 +43,6 @@ export function drawClock(): Renderer {
       .renderOutline('black', 4)
       .renderOutline('white', 2)
       .render('medium')
+      .toRect().getSize().x)
   }
 }

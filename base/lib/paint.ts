@@ -346,6 +346,83 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     return out
   }
 
+  function newYarndings(text: string, x = 0, y = 0) {
+    const data = {
+      text,
+      x,
+      y,
+      anchorX: 'left',
+      anchorY: 'top'
+    }
+
+    const fontSize = 48
+    const targetSize = 20
+    const font = 'Yarndings20'
+
+    const out = {
+      text: (text: string) => {
+        data.text = text
+        return out
+      },
+      at: (x: number, y: number) => {
+        data.x = ~~x
+        data.y = ~~y
+        return out
+      },
+      translate: (dx: number, dy: number) => {
+        data.x += ~~dx
+        data.y += ~~dy
+        return out
+      },
+      anchor: (x: 'left' | 'center' | 'right', y: 'top' | 'center' | 'bottom') => {
+        data.anchorX = x
+        data.anchorY = y
+        return out
+      },
+      render: (style: FillStyle, mix?: MixMode) => {
+        ctx.font = `${fontSize}px '${font}'`
+        const metrics = ctx.measureText(data.text)
+        const renderWidth = ~~(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
+        const renderHeight = ~~(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
+        const innerCanvas = createCanvas(renderWidth, renderHeight)
+        const innerCtx = innerCanvas.getContext('2d')!
+        innerCanvas.width = renderWidth
+        innerCanvas.height = renderHeight
+        innerCtx.fillStyle = 'white'
+        innerCtx.fillRect(0, 0, renderWidth, renderHeight)
+        innerCtx.fillStyle = 'black'
+        innerCtx.font = `${fontSize}px '${font}'`
+        innerCtx.textBaseline = 'alphabetic'
+        innerCtx.fillText(data.text, ~~metrics.actualBoundingBoxLeft, renderHeight - metrics.actualBoundingBoxDescent)
+
+        const realWidth = data.text.length * targetSize
+        const realHeight = targetSize
+
+        let renderX = data.x
+        if (data.anchorX === 'center') renderX -= realWidth / 2
+        if (data.anchorX === 'right') renderX -= realWidth
+        let renderY = data.y
+        if (data.anchorY === 'center') renderY -= realHeight / 2
+        if (data.anchorY === 'bottom') renderY -= realHeight
+
+        const imgData = innerCtx.getImageData(0, 0, renderWidth, renderHeight)
+        let sampleY = 0
+        let sampleX = 0
+        for (let y = 0; y < realHeight; y++) {
+          sampleY = Math.ceil(y / realHeight * renderHeight)
+          for (let x = 0; x < realWidth; x++) {
+            sampleX = Math.ceil(x / realWidth * renderWidth)
+            if (imgData.data[(sampleY * renderWidth + sampleX) * 4] >= 0.5) continue
+            setPixel(renderX + x, renderY + y, rasterize(style, x, y), mix)
+          }
+        }
+
+        return out
+      }
+    }
+    return out
+  }
+
   function render(onlyIfChanges = false) {
     if (onlyIfChanges && !changes) return
     for (let i = 0; i < data.length; i++) {
@@ -375,6 +452,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     newRect,
     newText,
     newTriangle,
+    newYarndings,
     render
   }
 }

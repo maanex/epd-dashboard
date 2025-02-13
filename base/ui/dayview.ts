@@ -74,7 +74,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
         p = xi / hourWidthHalf
         g = (leftValue + centerValue) / 2
         w = g + Easings.easeOutQuad(p) * (centerValue - g)
-        y = height - rainHeight * w / 100
+        y = height - rainHeight * w
         for (let yi = y; yi < height; yi++)
           paint.setPixel(x, yi, 0)
       }
@@ -83,7 +83,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
         p = (xi - hourWidthHalf) / hourWidthHalf
         g = (centerValue + rightValue) / 2
         w = centerValue + Easings.easeInQuad(p) * (g - centerValue)
-        y = height - rainHeight * w / 100
+        y = height - rainHeight * w
         for (let yi = y; yi < height; yi++)
           paint.setPixel(x, yi, 0)
       }
