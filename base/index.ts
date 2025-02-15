@@ -91,9 +91,9 @@ async function drawAndUpdate(forceFullUpdate: boolean) {
 async function run() {
   console.log('First')
   await drawAndUpdate(false)
-  await new Promise(resolve => setTimeout(resolve, 7000))
-  console.log('Second')
-  await drawAndUpdate(false)
+  // await new Promise(resolve => setTimeout(resolve, 7000))
+  // console.log('Second')
+  // await drawAndUpdate(false)
 }
 run()
 
