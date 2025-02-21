@@ -7,7 +7,7 @@ export function drawClock(): Renderer {
     paint.newRect(0, 0, width, height)
       .fill('lightest')
 
-    const rn = new Date()
+    const rn = new Date(Date.now())
     const text = `${rn.getHours().toString().padStart(2, '0')}:${rn.getMinutes().toString().padStart(2, '0')}`
     const shadowDist = 10
 

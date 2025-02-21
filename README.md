@@ -1,7 +1,7 @@
 
 # Screenshot
 
-![screenshot](./output/test.png)
+![screenshot](./output/demo.png)
 
 
 
