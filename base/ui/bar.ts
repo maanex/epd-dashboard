@@ -87,7 +87,7 @@ export function drawBar(weather: WeatherApi): Renderer {
     for (const el of left) {
       const taken = el({ paint, height: height - padding*2, padding })
       paint.transform(taken + padding*2, -padding)
-      paint.newRect(0, 0, 1, height).fill('medium')
+      // paint.newRect(0, 0, 1, height).fill('medium')
       paint.transform(padding*2 + 1, padding)
     }
 

@@ -1,14 +1,14 @@
 import { useWeatherApi } from "./api/weather"
 import { useImage } from "./lib/image"
 import { TopicUpFull, TopicUpPart, useMqtt } from "./lib/mqtt"
-import { drawBar } from "./ui/bar"
 import { drawDayview } from "./ui/dayview"
 import { GlobalFonts } from '@napi-rs/canvas'
 import * as path from 'path'
-import { drawClock } from "./ui/clock"
 import { Const } from "./lib/const"
 import { ImgDiff } from "./lib/imgdiff"
 import { ImgDebug } from "./lib/imgdebug"
+import { drawQuote } from "./ui/quote"
+import { drawDock } from "./ui/dock"
 
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'), 'Modak')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
@@ -28,7 +28,7 @@ function drawScreen() {
   const img = useImage()
 
   const dayviewHeight = 100
-  const barHeight = 30
+  const dockHeight = 60
 
   img.draw(
     drawDayview(weather),
@@ -36,14 +36,14 @@ function drawScreen() {
     Const.ScreenWidth, dayviewHeight
   )
   img.draw(
-    drawClock(),
+    drawQuote(),
     0, dayviewHeight,
-    Const.ScreenWidth, Const.ScreenHeight - dayviewHeight - barHeight
+    Const.ScreenWidth, Const.ScreenHeight - dayviewHeight - dockHeight
   )
   img.draw(
-    drawBar(weather),
-    0, Const.ScreenHeight - barHeight,
-    Const.ScreenWidth, barHeight
+    drawDock(weather),
+    0, Const.ScreenHeight - dockHeight,
+    Const.ScreenWidth, dockHeight
   )
 
   return img
@@ -103,5 +103,5 @@ run()
 // EPD_7IN5_V2_Sleep
 
 // // Clear epd screen
-mqtt.sendBinary(TopicUpFull, new Buffer(0))
+// mqtt.sendBinary(TopicUpFull, new Buffer(0))
 

@@ -1,0 +1,37 @@
+
+
+function parse(icon: string): number[] {
+  return icon.replace(/[^10]/gi, '').split('').map(Number)
+}
+
+
+const lightning = parse(`
+0000011000
+0000111000
+0001110000
+0011100000
+0011111000
+0000111100
+0001011100
+0001111000
+0001110000
+0001111000
+`)
+
+const clouds = parse(`
+0000000000
+0000000000
+0000011110
+0110000111
+1111110011
+1111111011
+1111111010
+0111110000
+0000000000
+0000000000
+`)
+
+export const icons = {
+  lightning,
+  clouds,
+}

@@ -1,4 +1,6 @@
 import { createCanvas, type SKRSContext2D } from "@napi-rs/canvas"
+import { drawText, splitText, getTextHeight } from 'canvas-txt'
+import { TextUtils } from "./text-utils"
 
 
 type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black'
@@ -157,6 +159,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       thresh: 0.9,
       anchorX: 'left',
       anchorY: 'top',
+      maxWidth: 0,
       anchorSnap: 0
     }
 
@@ -190,6 +193,10 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       },
       threshold: (thresh: number) => {
         data.thresh = thresh
+        return out
+      },
+      maxWidth: (maxWidth: number) => {
+        data.maxWidth = maxWidth
         return out
       },
       render: (style: FillStyle, mix?: MixMode) => {
@@ -347,6 +354,53 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     return out
   }
 
+  function newIcon(icon: number[], x = 0, y = 0) {
+    const data = {
+      icon,
+      x,
+      y,
+      anchorX: 'left',
+      anchorY: 'top',
+    }
+
+    const out = {
+      at: (x: number, y: number) => {
+        data.x = ~~x
+        data.y = ~~y
+        return out
+      },
+      translate: (dx: number, dy: number) => {
+        data.x += ~~dx
+        data.y += ~~dy
+        return out
+      },
+      anchor: (x: 'left' | 'center' | 'right', y: 'top' | 'center' | 'bottom') => {
+        data.anchorX = x
+        data.anchorY = y
+        return out
+      },
+      fill: (style: FillStyle, mix?: MixMode) => {
+        const size = ~~Math.sqrt(data.icon.length)
+
+        let renderX = data.x
+        if (data.anchorX === 'center') renderX -= ~~(size / 2)
+        if (data.anchorX === 'right') renderX -= size
+        let renderY = data.y
+        if (data.anchorY === 'center') renderY -= ~~(size / 2)
+        if (data.anchorY === 'bottom') renderY -= size
+   
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const index = y * size + x
+            if (data.icon[index] === 0) continue
+            setPixel(x + renderX, y + renderY, rasterize(style, x + renderX, y + renderY), mix)
+          }
+        }
+      }
+    }
+    return out
+  }
+
   function newYarndings(text: string, x = 0, y = 0) {
     const data = {
       text,
@@ -453,6 +507,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     newRect,
     newText,
     newTriangle,
+    newIcon,
     newYarndings,
     render
   }

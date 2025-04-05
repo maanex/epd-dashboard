@@ -11,10 +11,6 @@ export function drawClock(): Renderer {
     const text = `${rn.getHours().toString().padStart(2, '0')}:${rn.getMinutes().toString().padStart(2, '0')}`
     const shadowDist = 10
 
-    /* This renders the clock centered in the middle of the screen
-     * This looks great but it means partial updates most often have
-     * to update the whole text as the font is not monospaced
-     */
     paint
       .newText(text)
       .at(width / 2, (height) / 2)

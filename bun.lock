@@ -5,6 +5,7 @@
       "name": "base",
       "dependencies": {
         "@napi-rs/canvas": "^0.1.66",
+        "canvas-txt": "^4.1.1",
         "mqtt": "^5.10.3",
       },
       "devDependencies": {
@@ -59,6 +60,8 @@
     "buffer-from": ["buffer-from@1.1.2", "", {}, "sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ=="],
 
     "bun-types": ["bun-types@1.2.2", "", { "dependencies": { "@types/node": "*", "@types/ws": "~8.5.10" } }, "sha512-RCbMH5elr9gjgDGDhkTTugA21XtJAy/9jkKe/G3WR2q17VPGhcquf9Sir6uay9iW+7P/BV0CAHA1XlHXMAVKHg=="],
+
+    "canvas-txt": ["canvas-txt@4.1.1", "", {}, "sha512-kD47Nh9PC7HiZ+MHZn9/DKNbnMGT+xuLZHLOgbcWZo84jo7gRDTFCBqpehZBT+OFSSpYw2GKHl5hPvDa1q4y8A=="],
 
     "commist": ["commist@3.2.0", "", {}, "sha512-4PIMoPniho+LqXmpS5d3NuGYncG6XWlkBSVGiWycL22dd42OYdUGil2CWuzklaJoNxyxUSpO4MKIBU94viWNAw=="],
 
