@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pixel Art to 1/0 Converter</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        #output {
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            width: 80%;
+            max-width: 600px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            margin-top: 20px;
+            resize: vertical;
+            overflow: auto;
+            min-height: 100px;
+        }
+        #controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .color-button {
+            width: 50px;
+            height: 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+        }
+        .black { background-color: black; }
+        .white { background-color: white; border: 1px solid #ccc; }
+        .selected {
+            border: 2px solid blue;
+            padding: 2px;
+        }
+        #sizeControls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center; /* Vertically align items */
+        }
+        #sizeInput {
+            width: 50px; /* Adjust as needed */
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button id="exportButton">Export as 1/0s</button>
+        <button id="clearButton">Clear</button>
+    </div>
+    <div id="sizeControls">
+        <label for="sizeInput">Grid Size:</label>
+        <input type="number" id="sizeInput" value="10" min="1" aria-label="Grid Size Input">
+        <button id="resizeButton">Resize</button>
+    </div>
+
+    <canvas id="pixelCanvas" width="200" height="200"></canvas>
+    <textarea id="output"></textarea>
+
+    <script>
+        const canvas = document.getElementById('pixelCanvas');
+        const ctx = canvas.getContext('2d');
+        const exportButton = document.getElementById('exportButton');
+        const clearButton = document.getElementById('clearButton');
+        const output = document.getElementById('output');
+        let gridSize = 10;
+        let cellSize = canvas.width / gridSize;
+        let isDrawing = false;
+        let drawColor = 'black';
+        const sizeInput = document.getElementById('sizeInput');
+        const resizeButton = document.getElementById('resizeButton');
+
+
+        // Function to initialize the grid
+        function createGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, canvas.height);
+                ctx.strokeStyle = (i === gridSize / 2) ? '#aaa' : '#ccc'; // Highlight center
+                ctx.lineWidth = (i === gridSize / 2) ? 2 : 1;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(canvas.width, i * cellSize);
+                ctx.strokeStyle = (i === gridSize / 2) ? '#aaa' : '#ccc';  // Highlight center
+                ctx.lineWidth = (i === gridSize / 2) ? 2 : 1;
+                ctx.stroke();
+            }
+            ctx.lineWidth = 1; // Reset line width
+        }
+
+        // Initial grid creation
+        createGrid();
+
+        // Function to draw a pixel
+        function drawPixel(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            exportImage(); // Export after drawing
+        }
+
+        // Event listener for mouse click
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / cellSize);
+            const y = Math.floor((e.clientY - rect.top) / cellSize);
+
+             if (e.button === 0) { // Left click
+                drawColor = 'black';
+             } else if (e.button === 2) { // Right click
+                drawColor = 'white';
+             }
+            drawPixel(x, y, drawColor);
+        });
+
+        // Event listener for mouse move
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) {
+                const rect = canvas.getBoundingClientRect();
+                const x = Math.floor((e.clientX - rect.left) / cellSize);
+                const y = Math.floor((e.clientY - rect.top) / cellSize);
+                 if (e.buttons === 1) { // Left click
+                    drawColor = 'black';
+                } else if (e.buttons === 2) { // Right click
+                    drawColor = 'white';
+                }
+                drawPixel(x, y, drawColor);
+            }
+        });
+
+        // Event listener for mouse up
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        // Event listener for mouse leave
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+
+        // Function to export the grid as 1/0s
+        function exportImage() {
+            let outputString = '';
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    // Calculate the index of the first color component (R) of the pixel
+                    const pixelIndex = (x * cellSize + y * canvas.width * cellSize) * 4;
+                    const r = imageData[pixelIndex];
+                    const g = imageData[pixelIndex + 1];
+                    const b = imageData[pixelIndex + 2];
+                    const isBlack = (r === 0 && g === 0 && b === 0);
+
+                    outputString += isBlack ? '1' : '0';
+                }
+                outputString += '\n';
+            }
+            output.value = outputString; // Use .value for textarea
+        }
+
+        exportButton.addEventListener('click', exportImage);
+
+        // Clear button functionality
+        clearButton.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            createGrid(); // Re-draw the grid lines
+            output.value = ''; // Clear the output
+        });
+
+        // Disable context menu on canvas to allow right click
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // Resize functionality
+        resizeButton.addEventListener('click', () => {
+            const newSize = parseInt(sizeInput.value);
+            if (newSize > 0) {
+                gridSize = newSize;
+                cellSize = canvas.width / gridSize;
+                createGrid(); // Re-render the grid
+                exportImage();
+            } else {
+                alert("Please enter a valid size greater than 0.");
+            }
+        });
+
+        // Handle pasting into the output
+        output.addEventListener('paste', (event) => {
+            event.preventDefault();
+
+            const pastedText = event.clipboardData.getData('text');
+            const lines = pastedText.trim().split('\n');
+            let maxRowLength = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].length > maxRowLength) {
+                    maxRowLength = lines[i].length;
+                }
+            }
+            let newGridSize = maxRowLength;
+
+            if (lines.some(line => line.length !== newGridSize)) {
+                alert('Pasted data must have equal row lengths to form a grid.');
+                return;
+            }
+
+            if (newGridSize > 50) {
+                alert('Grid size cannot exceed 50.');
+                return;
+            }
+
+            gridSize = newGridSize;
+            cellSize = canvas.width / gridSize;
+            sizeInput.value = gridSize;
+            createGrid();
+
+            for (let y = 0; y < gridSize; y++) {
+                if (y >= lines.length) break;
+                for (let x = 0; x < gridSize; x++) {
+                    if (x >= lines[y].length) break;
+                    const char = lines[y][x];
+                    if (char === '1') {
+                        drawPixel(x, y, 'black');
+                    } else if (char === '0') {
+                        drawPixel(x, y, 'white');
+                    }
+                }
+            }
+            exportImage();
+        });
+
+    </script>
+</body>
+</html>

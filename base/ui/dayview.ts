@@ -147,7 +147,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
     const coldestHour = hourly.reduce((a, b) => a.temperature < b.temperature ? a : b)
     const coldestHourIdx = ((coldestHour.hour < firstHour) ? (coldestHour.hour + 24) : coldestHour.hour) - firstHour
     paint
-      .newText(warmestHour.temperature.toFixed(1) + '°')
+      .newText(Math.round(warmestHour.temperature) + '°')
       .at(warmestHourIdx * hourWidth + hourWidth / 2, tempUpper + 10)
       .anchor('center', 'top')
       .size(12)
@@ -159,7 +159,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
       )
       .render('black')
     paint
-      .newText(coldestHour.temperature.toFixed(1) + '°')
+      .newText(Math.round(coldestHour.temperature) + '°')
       .at(coldestHourIdx * hourWidth + hourWidth / 2, tempLower - 10)
       .anchor('center', 'bottom')
       .size(12)
@@ -185,7 +185,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
       const yOff = yRel < 0.5 ? -15 : 15
 
       paint
-        .newText(hour.temperature.toFixed(1) + '°')
+        .newText(Math.round(hour.temperature) + '°')
         .at(hourIdx * hourWidth + hourWidth / 2, y + yOff)
         .anchor('center', 'center')
         .size(12)

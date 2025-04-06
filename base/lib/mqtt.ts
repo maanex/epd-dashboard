@@ -9,6 +9,12 @@ export const TopicUpPart = 'epddash/up/part'
 type Stat = 'hello' | 'bye' | 'require_full'
 type Listener = (stat: Stat) => void
 
+export const useMqttStub = () => ({
+  init: () => Promise.resolve(),
+  subscribeStat: (_listener: Listener) => void 0,
+  sendBinary: (_topic: typeof TopicUpFull | typeof TopicUpPart, _payload: Buffer) => void 0
+})
+
 export const useMqtt = () => {
   let client: MqttClient | null = null
 

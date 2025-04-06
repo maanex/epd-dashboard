@@ -97,19 +97,12 @@ void setup() {
   disp_clear();
 
   DEV_Delay_ms(500);
+  EPD_7IN5_V2_Sleep();
+  printf("Going to sleep...\r\n");
   setup_success = 1;
+
   return;
 }
 
 void loop() {
-  if (!setup_success) {
-    return;
-  }
-
-  // if (net_loop() != 0) {
-  //   disp_print_raw(" ERROR ON WIFI INIT! ");
-  //   DEV_Delay_ms(50000);
-  //   disp_clear();
-  //   return;
-  // }
 }

@@ -1,6 +1,6 @@
 import { useWeatherApi } from "./api/weather"
 import { useImage } from "./lib/image"
-import { TopicUpFull, TopicUpPart, useMqtt } from "./lib/mqtt"
+import { TopicUpFull, TopicUpPart, useMqtt, useMqttStub } from "./lib/mqtt"
 import { drawDayview } from "./ui/dayview"
 import { GlobalFonts } from '@napi-rs/canvas'
 import * as path from 'path'
@@ -14,7 +14,10 @@ GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Mod
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
 
-const mqtt = useMqtt()
+// /*
+const mqtt = useMqttStub()
+//*/ const mqtt = useMqtt()
+//*/
 await mqtt.init()
 
 mqtt.subscribeStat(message => {
@@ -60,7 +63,7 @@ async function drawAndUpdate(forceFullUpdate: boolean) {
   await img.exportFullBw('test.png')
 
   if (!lastRendered || forceFullUpdate) {
-    // mqtt.sendBinary(TopicUpFull, rendered)
+    mqtt.sendBinary(TopicUpFull, rendered)
     lastRendered = rendered
     return
   }
@@ -74,7 +77,7 @@ async function drawAndUpdate(forceFullUpdate: boolean) {
   const bounds = ImgDiff.getBounds(diff, Const.ScreenWidth, Const.ScreenHeight)
   console.log('Partial update', bounds, bounds.w * bounds.h, Const.MaxPixelsForPartialUpdate)
   if (bounds.w * bounds.h > Const.MaxPixelsForPartialUpdate) {
-    // mqtt.sendBinary(TopicUpFull, rendered)
+    mqtt.sendBinary(TopicUpFull, rendered)
     lastRendered = rendered
     return
   }
@@ -85,7 +88,7 @@ async function drawAndUpdate(forceFullUpdate: boolean) {
   buff.writeUInt16BE(bounds.w, 4)
   buff.writeUInt16BE(bounds.h, 6)
   ImgDiff.copyBounds(diff, buff, 8, bounds, Const.ScreenWidth)
-  // mqtt.sendBinary(TopicUpPart, buff)
+  mqtt.sendBinary(TopicUpPart, buff)
 }
 
 async function run() {
