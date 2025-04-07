@@ -9,6 +9,10 @@ import { ImgDiff } from "./lib/imgdiff"
 import { ImgDebug } from "./lib/imgdebug"
 import { drawQuote } from "./ui/quote"
 import { drawDock } from "./ui/dock"
+import { useGCalendarApi, type GCalendarApi } from "./api/gcalendar"
+import { drawCalendarUpcoming } from "./ui/calendar"
+import consola from "consola"
+import * as fs from 'fs/promises'
 
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'), 'Modak')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
@@ -21,10 +25,20 @@ const mqtt = useMqttStub()
 await mqtt.init()
 
 mqtt.subscribeStat(message => {
-  console.log(message)
+  consola.withTag('MQTT').info(message)
 })
 
+consola.start('Loading weather')
 const weather = await useWeatherApi()
+consola.success('Weather loaded')
+
+consola.start('Loading gCalendar')
+// const calendar = await useGCalendarApi({
+//   blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
+// })
+// await fs.writeFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), JSON.stringify(calendar, null, 2))
+const calendar = JSON.parse(await fs.readFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), 'utf-8')) as GCalendarApi
+consola.success('gCalendar loaded')
 
 
 function drawScreen() {
@@ -39,7 +53,7 @@ function drawScreen() {
     Const.ScreenWidth, dayviewHeight
   )
   img.draw(
-    drawQuote(),
+    drawCalendarUpcoming(calendar),
     0, dayviewHeight,
     Const.ScreenWidth, Const.ScreenHeight - dayviewHeight - dockHeight
   )
@@ -92,18 +106,13 @@ async function drawAndUpdate(forceFullUpdate: boolean) {
 }
 
 async function run() {
-  console.log('First')
+  consola.log('First')
   await drawAndUpdate(false)
   // await new Promise(resolve => setTimeout(resolve, 7000))
   // console.log('Second')
   // await drawAndUpdate(false)
 }
 run()
-
-
-
-// TODO turn off:
-// EPD_7IN5_V2_Sleep
 
 // // Clear epd screen
 // mqtt.sendBinary(TopicUpFull, new Buffer(0))

@@ -3,6 +3,9 @@
 export namespace TextUtils {
 
   export function sliceIntoNewlines(text: string, lineLength: number) {
+    if (lineLength <= 0)
+      return [text]
+
     const lines = []
     while (text.length > lineLength) {
       const i = text.lastIndexOf(' ', lineLength)

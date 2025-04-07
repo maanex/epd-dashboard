@@ -5,7 +5,9 @@
 .vscode/launch.json
 .vscode/ipch
 vault
-
+credentials/*
+!credentials/.gitkeep
+temp
 
 logs
 _.log

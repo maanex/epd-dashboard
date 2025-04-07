@@ -1,6 +1,7 @@
 import { createCanvas, type SKRSContext2D } from "@napi-rs/canvas"
 import { drawText, splitText, getTextHeight } from 'canvas-txt'
 import { TextUtils } from "./text-utils"
+import { cFont } from "./c-font"
 
 
 type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black'
@@ -294,6 +295,121 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     return out
   }
 
+  function newBitText(text: string, x = 0, y = 0) {
+    const data = {
+      text,
+      x,
+      y,
+      size: 16 as (8 | 12 | 16 | 20 | 24),
+      font: 'monospace',
+      thresh: 0.9,
+      anchorX: 'left',
+      anchorY: 'top',
+      maxWidth: 0
+    }
+
+    const out = {
+      text: (text: string) => {
+        data.text = text
+        return out
+      },
+      at: (x: number, y: number) => {
+        data.x = ~~x
+        data.y = ~~y
+        return out
+      },
+      translate: (dx: number, dy: number) => {
+        data.x += ~~dx
+        data.y += ~~dy
+        return out
+      },
+      size: (size: 8 | 12 | 16 | 20 | 24) => {
+        data.size = size
+        return out
+      },
+      font: (font: string) => {
+        data.font = font
+        return out
+      },
+      anchor: (x: 'left' | 'center' | 'right', y: 'top' | 'center' | 'bottom') => {
+        data.anchorX = x
+        data.anchorY = y
+        return out
+      },
+      threshold: (thresh: number) => {
+        data.thresh = thresh
+        return out
+      },
+      maxWidth: (maxWidth: number) => {
+        data.maxWidth = maxWidth
+        return out
+      },
+      render: (style: FillStyle, mix?: MixMode) => {
+        const font = cFont[data.size]
+        const lines = TextUtils.sliceIntoNewlines(data.text, data.maxWidth / font.width)
+        const lineHeight = ~~(data.size * 1.2)
+        const boxWidth = Math.max(...lines.map(line => line.length * font.width))
+        const boxHeight = lines.length * lineHeight
+
+        let renderX = data.x
+        if (data.anchorX === 'center') renderX -= boxWidth / 2
+        if (data.anchorX === 'right') renderX -= boxWidth
+        let renderY = data.y
+        if (data.anchorY === 'center') renderY -= boxHeight / 2
+        if (data.anchorY === 'bottom') renderY -= boxHeight
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i]
+          const cY = renderY + i * data.size
+          for (let j = 0; j < line.length; j++) {
+            const char = line[j]
+            const charData = (font as any)[char]
+            if (!charData) continue
+            const cX = renderX + j * font.width
+
+            let byte = 0
+            for (let row = 0; row < data.size; row++) {
+              for (let col = 0; col < font.width; col++) {
+                // console.log(row, col, charData[byte].toString(2).padStart(8, '0'), '.', (0x80 >> (col % 8)).toString(2).padStart(8, '0'), '.', charData[byte] & (0x80 >> (col % 8)))
+                if (charData[byte] & (0x80 >> (col % 8)))
+                  setPixel(cX + col, cY + row, rasterize(style, x, y), mix)
+
+                if (col % 8 === 7)
+                  byte++
+              }
+
+              if (font.width % 8 !== 0)
+                byte++
+            }
+          }
+        }
+
+        return out
+      },
+      toRect: () => {
+        const font = cFont[data.size]
+        const lines = TextUtils.sliceIntoNewlines(data.text, data.maxWidth / font.width)
+        const lineHeight = ~~(data.size * 1.2)
+        const boxWidth = Math.max(...lines.map(line => line.length * font.width))
+        const boxHeight = lines.length * lineHeight
+
+        let renderX = data.x
+        if (data.anchorX === 'center') renderX -= boxWidth / 2
+        if (data.anchorX === 'right') renderX -= boxWidth
+        let renderY = data.y
+        if (data.anchorY === 'center') renderY -= boxHeight / 2
+        if (data.anchorY === 'bottom') renderY -= boxHeight
+
+        return newRect(renderX, renderY, boxWidth, boxHeight) 
+      },
+      getRect: (fn: (rect: ReturnType<typeof newRect>) => any) => {
+        fn(out.toRect())
+        return out
+      }
+    }
+    return out
+  }
+
   function newTriangle(x = 0, y = 0, size = 20) {
     const tri = {
       x,
@@ -506,6 +622,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     setPixel,
     newRect,
     newText,
+    newBitText,
     newTriangle,
     newIcon,
     newYarndings,
