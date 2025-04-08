@@ -33,11 +33,13 @@ const weather = await useWeatherApi()
 consola.success('Weather loaded')
 
 consola.start('Loading gCalendar')
-// const calendar = await useGCalendarApi({
-//   blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
-// })
-// await fs.writeFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), JSON.stringify(calendar, null, 2))
-const calendar = JSON.parse(await fs.readFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), 'utf-8')) as GCalendarApi
+/*
+const calendar = await useGCalendarApi({
+  blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
+})
+await fs.writeFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), JSON.stringify(calendar, null, 2))
+//*/ const calendar = JSON.parse(await fs.readFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), 'utf-8')) as GCalendarApi
+//*/
 consola.success('gCalendar loaded')
 
 
@@ -55,7 +57,8 @@ function drawScreen() {
   img.draw(
     drawCalendarUpcoming(calendar),
     0, dayviewHeight,
-    Const.ScreenWidth, Const.ScreenHeight - dayviewHeight - dockHeight
+    // Const.ScreenWidth, Const.ScreenHeight - dayviewHeight - dockHeight
+    220, Const.ScreenHeight - dayviewHeight - dockHeight
   )
   img.draw(
     drawDock(weather),
@@ -72,8 +75,10 @@ async function drawAndUpdate(forceFullUpdate: boolean) {
   if (Date.now() - lastChange < 5000)
     return
 
+  lastChange = Date.now()
   const img = drawScreen()
   const rendered = img.renderFullBw()
+  consola.info(`Frame rendered in ${Date.now() - lastChange}ms`)
   await img.exportFullBw('test.png')
 
   if (!lastRendered || forceFullUpdate) {

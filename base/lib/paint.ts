@@ -347,9 +347,8 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       render: (style: FillStyle, mix?: MixMode) => {
         const font = cFont[data.size]
         const lines = TextUtils.sliceIntoNewlines(data.text, data.maxWidth / font.width)
-        const lineHeight = ~~(data.size * 1.2)
         const boxWidth = Math.max(...lines.map(line => line.length * font.width))
-        const boxHeight = lines.length * lineHeight
+        const boxHeight = lines.length * data.size
 
         let renderX = data.x
         if (data.anchorX === 'center') renderX -= boxWidth / 2
@@ -389,9 +388,8 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       toRect: () => {
         const font = cFont[data.size]
         const lines = TextUtils.sliceIntoNewlines(data.text, data.maxWidth / font.width)
-        const lineHeight = ~~(data.size * 1.2)
         const boxWidth = Math.max(...lines.map(line => line.length * font.width))
-        const boxHeight = lines.length * lineHeight
+        const boxHeight = lines.length * data.size
 
         let renderX = data.x
         if (data.anchorX === 'center') renderX -= boxWidth / 2

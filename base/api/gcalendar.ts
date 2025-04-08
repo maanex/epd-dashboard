@@ -58,9 +58,11 @@ async function listCalendars(auth: any) {
 
 async function listUpcomingEvents(auth: any, calendarId: string) {
   const calendar = google.calendar({ version: 'v3', auth })
+  const startOfDay = new Date()
+  startOfDay.setHours(0, 0, 0, 0)
   const res = await calendar.events.list({
     calendarId: calendarId,
-    timeMin: new Date().toISOString(),
+    timeMin: startOfDay.toISOString(),
     maxResults: 10,
     singleEvents: true,
     orderBy: 'startTime',
@@ -94,28 +96,48 @@ export const useGCalendarApi = async (filter?: Filter) => {
     }))
   }
 
-  const list = await Promise.all(calendars.map(async (calendar) => {
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  const endOfToday = new Date()
+  endOfToday.setHours(23, 59, 59, 999)
+
+  const mapped = await Promise.all(calendars.map(async (calendar) => {
     const events = await listUpcomingEvents(authClient, calendar.id!)
-    return {
-      ...calendar,
-      events: events.map(event => ({
+    return events.map(event => {
+      const start = new Date(event.start?.dateTime || event.start?.date || 0)
+      const end = new Date(event.end?.dateTime || event.end?.date || 0)
+      const isAllDay = end.getTime() - start.getTime() >= 24 * 60 * 60 * 1000
+      const isMultiDay = isAllDay && (end.getTime() - start.getTime() > 24 * 60 * 60 * 1000)
+      const multiDayCount = isMultiDay ? Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) : -1
+      const multiDayCurrent = isMultiDay ? Math.floor((new Date().getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) : -1
+      const isToday = start.getTime() <= endOfToday.getTime() && end.getTime() >= startOfToday.getTime()
+
+      return {
         ...event,
-        start: new Date(event.start?.dateTime || event.start?.date || 0).getTime(),
-        end: new Date(event.end?.dateTime || event.end?.date || 0).getTime(),
-        summary: event.summary || 'No Title',
-        calendarId: calendar.id
-      }))
-    }
+        start,
+        end,
+        isOver: end.getTime() < new Date().getTime(),
+        isToday,
+        isAllDay,
+        isMultiDay,
+        multiDayCount,
+        multiDayCurrent,
+        summary: event.summary || '(no title)',
+        calendar
+      }
+    })
   }))
 
-  const upcoming = list
-    .flatMap(calendar => calendar.events)
-    .sort((a, b) => a.start - b.start)
-    .slice(0, 10)
+  const list = mapped
+    .flat()
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+
+  const today = list
+    .filter(e => e.isToday)
 
   return {
     list,
-    upcoming
+    today
   }
 }
 

@@ -47,7 +47,7 @@ export function drawDock(weather: WeatherApi): Renderer {
   return ({ paint, width, height }) => {
     paint.newRect(0, 0, width, height)
       .fill('medium')
-    paint.newRect(0, 0, width, 1)
+    paint.newRect(0, 0, width, 2)
       .fill('black')
 
     const padding = 6
