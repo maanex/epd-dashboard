@@ -1,3 +1,4 @@
+import type { HolidaysApi } from "../api/holidays"
 import type { WeatherApi } from "../api/weather"
 import { icons } from "../lib/icons"
 import type { Renderer } from "../lib/image"
@@ -43,7 +44,7 @@ const weatherCodeIcons: Record<number, number[]> = {
 
 const weekdayShort = [ 'SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA' ]
 
-export function drawDock(weather: WeatherApi): Renderer {
+export function drawDock(weather: WeatherApi, holidays: HolidaysApi): Renderer {
   return ({ paint, width, height }) => {
     paint.newRect(0, 0, width, height)
       .fill('medium')
@@ -109,8 +110,8 @@ export function drawDock(weather: WeatherApi): Renderer {
         .inset(1)
         .fill('white')
 
-      const isWeekend = weekdayAtI === 6 || weekdayAtI === 0
-      if (isWeekend) {
+      const isHoliday = weekdayAtI === 0 || holidays.isHolidayInXDays(i)
+      if (isHoliday) {
         box
           .inset(1)
           .fill('black')

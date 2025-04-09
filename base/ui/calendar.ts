@@ -9,7 +9,8 @@ export function drawCalendarUpcoming(calendar: GCalendarApi): Renderer {
 
     paint.newRect(0, 0, width, height)
       .fill('white')
-      .outline('medium')
+    paint.newRect(width - 2, 0, 2, height)
+      .fill('black')
 
     const textPaint = paint
       .newText('Today')
@@ -20,8 +21,8 @@ export function drawCalendarUpcoming(calendar: GCalendarApi): Renderer {
       .threshold(0.05)
       .render('black')
 
-    const allDayers = calendar.today.filter(event => event.isAllDay)
-    const timedEvents = calendar.today.filter(event => !event.isAllDay)
+    const allDayers = calendar.data.filter(event => event.isToday && event.isAllDay)
+    const timedEvents = calendar.data.filter(event => event.isToday && !event.isAllDay)
 
     let y = textPaint.toRect().getSize().height + padding + 10
     for (let i = 0; i < 6; i++) {

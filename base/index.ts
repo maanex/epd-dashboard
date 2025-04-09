@@ -13,6 +13,7 @@ import { useGCalendarApi, type GCalendarApi } from "./api/gcalendar"
 import { drawCalendarUpcoming } from "./ui/calendar"
 import consola from "consola"
 import * as fs from 'fs/promises'
+import { useHolidaysApi } from "./api/holidays"
 
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'), 'Modak')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
@@ -33,7 +34,7 @@ const weather = await useWeatherApi()
 consola.success('Weather loaded')
 
 consola.start('Loading gCalendar')
-/*
+// /*
 const calendar = await useGCalendarApi({
   blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
 })
@@ -41,6 +42,10 @@ await fs.writeFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), JSON.
 //*/ const calendar = JSON.parse(await fs.readFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), 'utf-8')) as GCalendarApi
 //*/
 consola.success('gCalendar loaded')
+
+consola.start('Loading holidays')
+const holidays = await useHolidaysApi()
+consola.success('Holidays loaded')
 
 
 function drawScreen() {
@@ -61,7 +66,7 @@ function drawScreen() {
     220, Const.ScreenHeight - dayviewHeight - dockHeight
   )
   img.draw(
-    drawDock(weather),
+    drawDock(weather, holidays),
     0, Const.ScreenHeight - dockHeight,
     Const.ScreenWidth, dockHeight
   )

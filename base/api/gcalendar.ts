@@ -75,7 +75,7 @@ type Filter = {
   blacklist?: Array<RegExp | string>
 }
 
-export const useGCalendarApi = async (filter?: Filter) => {
+async function fetch(filter?: Filter) {
   const authClient = await authorize()
   let calendars = await listCalendars(authClient)
 
@@ -128,16 +128,29 @@ export const useGCalendarApi = async (filter?: Filter) => {
     })
   }))
 
-  const list = mapped
+  return mapped
     .flat()
     .sort((a, b) => a.start.getTime() - b.start.getTime())
+}
 
-  const today = list
-    .filter(e => e.isToday)
+export const useGCalendarApi = async (filter?: Filter) => {
+  let data = await fetch(filter)
+  let dataTime = Date.now()
+
+  async function refresh() {
+    data = await fetch(filter)
+    dataTime = Date.now()
+  }
+  
+  async function assertRecentData() {
+    if (Date.now() - dataTime > 1000 * 60 * 60)
+      await refresh()
+  }
 
   return {
-    list,
-    today
+    data,
+    refresh,
+    assertRecentData
   }
 }
 
