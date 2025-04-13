@@ -152,7 +152,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
       .anchor('center', 'top')
       .size(12)
       .threshold(0.9)
-      .getRect(r => r
+      .useRect(r => r
         .inset(-2)
         .round(4)
         .fill('white')
@@ -164,7 +164,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
       .anchor('center', 'bottom')
       .size(12)
       .threshold(0.9)
-      .getRect(r => r
+      .useRect(r => r
         .inset(-2)
         .round(4)
         .fill('white')
@@ -190,7 +190,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
         .anchor('center', 'center')
         .size(12)
         .threshold(0.65)
-        .getRect(r => r
+        .useRect(r => r
           .inset(-2)
           .round(4)
           .fill('white')
@@ -198,10 +198,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
         .render('black')
     }
 
-
-    paint.newRect(0, 0, width, height)
-      .outline('black', 2)
-    // paint.newRect(0, height-1, width, 1)
-    //   .fill('black')
+    paint.newRect(0, height-2, width, 2)
+      .fill('black')
   }
 }

@@ -1,19 +1,25 @@
 import type { GCalendarApi } from "../api/gcalendar"
+import { DatetimeUtils } from "../lib/datetime-utils"
 import type { Renderer } from "../lib/image"
 
 
-export function drawCalendarUpcoming(calendar: GCalendarApi): Renderer {
+const defaultTaskListName = 'Meine Aufgaben'
+
+
+export function drawCalendarAgenda(calendar: GCalendarApi): Renderer {
   return ({ paint, width, height }) => {
     const padding = 15
     const maxWidth = width - padding * 2
 
     paint.newRect(0, 0, width, height)
       .fill('white')
-    paint.newRect(width - 2, 0, 2, height)
-      .fill('black')
 
-    const textPaint = paint
-      .newText('Today')
+    paint
+      .newText(new Date().toLocaleDateString('de-DE', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+      }).replace('.,', ','))
       .at(padding, padding)
       .anchor('left', 'top')
       .size(28)
@@ -21,10 +27,10 @@ export function drawCalendarUpcoming(calendar: GCalendarApi): Renderer {
       .threshold(0.05)
       .render('black')
 
-    const allDayers = calendar.data.filter(event => event.isToday && event.isAllDay)
-    const timedEvents = calendar.data.filter(event => event.isToday && !event.isAllDay)
+    const allDayers = calendar.events.filter(event => event.isToday && event.isAllDay)
+    const timedEvents = calendar.events.filter(event => event.isToday && !event.isAllDay)
 
-    let y = textPaint.toRect().getSize().height + padding + 10
+    let y = padding + 28 + 5
     for (let i = 0; i < 6; i++) {
       const event = allDayers[i]
       if (!event) break
@@ -40,19 +46,20 @@ export function drawCalendarUpcoming(calendar: GCalendarApi): Renderer {
         .size(12)
         .anchor('left', 'top')
         .translate(inset, inset)
-        .getRect(r => r
+        .useRect(r => r
           .inset(-inset)
           .sized(r.getSize().width + 6, r.getSize().height - 1)
           .round(2)
-          .translate(3, 3)
-          .fill('light')
-          .translate(-3, -3)
+          .useCopy(r => r
+            .translate(3, 3)
+            .fill('light')
+          )
           .fill('black')
           .inset(1)
           .fill('white')
-          .sized(6, r.getSize().height)
+          .sized(6, null)
           .fill('medium', 'darken')
-          .sized(1, r.getSize().height)
+          .sized(1, null)
           .round(0)
           .translate(5, 0)
           .fill('black')
@@ -63,7 +70,8 @@ export function drawCalendarUpcoming(calendar: GCalendarApi): Renderer {
       y += ~~(textEvent.toRect().getSize().height + inset*2 + 4)
     }
 
-    y += padding
+    if (allDayers.length && timedEvents.length)
+      y += padding
 
     for (let i = 0; i < 12; i++) {
       const event = timedEvents[i]
@@ -81,7 +89,7 @@ export function drawCalendarUpcoming(calendar: GCalendarApi): Renderer {
         .at(x, y)
         .size(12)
         .anchor('left', 'top')
-        .getRect(r => r
+        .useRect(r => r
           .inset(-inset)
           .round(2)
           .sized(r.getSize().width, r.getSize().height - 2)
@@ -98,47 +106,56 @@ export function drawCalendarUpcoming(calendar: GCalendarApi): Renderer {
         .at(x, y)
         .size(12)
         .anchor('left', 'top')
-        .getRect(r => r.fill('white'))
+        .useRect(r => r.fill('white'))
         .render('black')
 
       y += textEvent.toRect().getSize().height + 10
     }
 
-    // let y = 60
-    // for (let i = 0; i < 10; i++) {
-    //   const event = calendar.list[i]
-    //   if (!event) break
+    if (allDayers.length || timedEvents.length) {
+      y += padding
+      paint
+        .newRect(padding, y, maxWidth, 1)
+        .inset(0.5)
+        .fill('medium')
+      y += padding
+    }
 
-    //   const start = new Date(event.start).toLocaleTimeString('de-DE', {
-    //     hour: '2-digit',
-    //     minute: '2-digit',
-    //     hour12: false,
-    //   })
-    //   const timeText = paint.newBitText(start)
-    //     .maxWidth(500)
-    //     .at(20, y)
-    //     .size(12)
-    //     .getRect(r => r
-    //       .inset(-2)
-    //       .translate(0, -2)
-    //       .fill(allDay ? 'medium' : (over ? 'white' : 'black'))
-    //       .outline(allDay ? 'medium' : 'black')
-    //     )
-    //     .anchor('left', 'top')
+    for (let i = 0; i < 8; i++) {
+      const task = calendar.tasks[i]
+      if (!task) break
 
-    //   if (!allDay)
-    //     timeText.render(over ? 'black' : 'white')
+      const isInDefaultList = task.partOf.title === defaultTaskListName
+      console.log(task)
 
-    //   const nameText = paint.newBitText(event.summary)
-    //     .maxWidth(150)
-    //     .at(20 + timeText.toRect().getSize().width + 10, y)
-    //     .size(12)
-    //     .anchor('left', 'top')
-    //     .render('black')
-    //     .toRect()
+      paint.newRect(padding, y-1, 12, 12)
+        .round(2)
+        .fill('black')
+        .inset(1)
+        .fill('white')
 
-    //   y += nameText.getSize().height + 10
-    // }
+      const textTask = paint.newBitText((isInDefaultList ? '' : `${task.partOf.title!}: `) + (task.title ?? '(mystery task)'))
+        .at(padding + 18, y)
+        .size(12)
+        .maxWidth(maxWidth - 18)
+        .anchor('left', 'top')
+        .render('black')
 
+      y += textTask.toRect().getSize().height
+
+      if (task.due) {
+        const date = new Date(task.due)
+        const delta = DatetimeUtils.renderDayDelta(date)
+        const textDate = paint.newBitText('> ' + delta)
+          .at(padding + 18, y + 2)
+          .size(8)
+          .maxWidth(maxWidth - 18)
+          .anchor('left', 'top')
+          .render('black')
+        y += textDate.toRect().getSize().height + 2
+      }
+
+      y += 7
+    }
   }
 }

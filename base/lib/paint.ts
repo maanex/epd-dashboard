@@ -7,6 +7,20 @@ import { cFont } from "./c-font"
 type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black'
 type MixMode = 'default' | 'darken' | 'lighten' | 'invert'
 
+
+type RectPaint = {
+  from: (fromX: number, fromY: number) => RectPaint
+  sized: (width: number | null, height: number | null) => RectPaint
+  to: (toX: number, toY: number) => RectPaint
+  translate: (dx: number, dy: number) => RectPaint
+  inset: (dx: number, dy?: number) => RectPaint
+  round: (radius: number) => RectPaint
+  fill: (style: FillStyle, mix?: MixMode) => RectPaint
+  outline: (style: FillStyle, width: number, mix?: MixMode) => RectPaint
+  useCopy: (fn: (rect: RectPaint) => any) => RectPaint
+  getSize: () => { x: number, y: number, width: number, height: number }
+}
+
 function rasterize(style: FillStyle, x: number, y: number) {
   if (style === 'black') return 0
   if (style === 'white') return 1
@@ -58,13 +72,13 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     changes = true
   }
 
-  function newRect(fromX = 0, fromY = 0, width = 1, height = 1) {
+  function newRect(fromX = 0, fromY = 0, width = 1, height = 1, br = 0) {
     const rect = {
       x: fromX,
       y: fromY,
       w: width,
       h: height,
-      br: 0
+      br
     }
 
     function checkBr(x: number, y: number) {
@@ -90,15 +104,15 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       return false
     }
 
-    const out = {
+    const out: RectPaint = {
       from: (fromX: number, fromY: number) => {
         rect.x = ~~fromX
         rect.y = ~~fromY
         return out
       },
-      sized: (width: number, height: number) => {
-        rect.w = ~~width
-        rect.h = ~~height
+      sized: (width: number | null, height: number | null) => {
+        rect.w = width === null ? rect.w : ~~width
+        rect.h = height === null ? rect.h : ~~height
         return out
       },
       to: (toX: number, toY: number) => {
@@ -106,7 +120,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         rect.h = ~~(toY - rect.y)
         return out
       },
-      translate(dx: number, dy: number) {
+      translate: (dx: number, dy: number) => {
         rect.x += ~~dx
         rect.y += ~~dy
         return out
@@ -142,6 +156,10 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
             }
           }
         }
+        return out
+      },
+      useCopy: (fn: (rect: ReturnType<typeof newRect>) => any) => {
+        fn(newRect(rect.x, rect.y, rect.w, rect.h, rect.br))
         return out
       },
       getSize: () => ({ x: rect.x, y: rect.y, width: rect.w, height: rect.h })
@@ -287,7 +305,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
 
         return newRect(renderX, renderY, innerWidth, innerHeight) 
       },
-      getRect: (fn: (rect: ReturnType<typeof newRect>) => any) => {
+      useRect: (fn: (rect: ReturnType<typeof newRect>) => any) => {
         fn(out.toRect())
         return out
       }
@@ -400,7 +418,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
 
         return newRect(renderX, renderY, boxWidth, boxHeight) 
       },
-      getRect: (fn: (rect: ReturnType<typeof newRect>) => any) => {
+      useRect: (fn: (rect: ReturnType<typeof newRect>) => any) => {
         fn(out.toRect())
         return out
       }

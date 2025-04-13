@@ -10,10 +10,12 @@ import { ImgDebug } from "./lib/imgdebug"
 import { drawQuote } from "./ui/quote"
 import { drawDock } from "./ui/dock"
 import { useGCalendarApi, type GCalendarApi } from "./api/gcalendar"
-import { drawCalendarUpcoming } from "./ui/calendar"
+import { drawCalendarAgenda } from "./ui/calendar"
 import consola from "consola"
 import * as fs from 'fs/promises'
 import { useHolidaysApi } from "./api/holidays"
+import { drawClock } from "./ui/clock"
+import { drawBar } from "./ui/bar"
 
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'), 'Modak')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
@@ -53,6 +55,7 @@ function drawScreen() {
 
   const dayviewHeight = 100
   const dockHeight = 60
+  const horizontalSplit = 220
 
   img.draw(
     drawDayview(weather),
@@ -60,10 +63,14 @@ function drawScreen() {
     Const.ScreenWidth, dayviewHeight
   )
   img.draw(
-    drawCalendarUpcoming(calendar),
+    drawCalendarAgenda(calendar),
     0, dayviewHeight,
-    // Const.ScreenWidth, Const.ScreenHeight - dayviewHeight - dockHeight
-    220, Const.ScreenHeight - dayviewHeight - dockHeight
+    horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
+  )
+  img.draw(
+    drawQuote(),
+    horizontalSplit, dayviewHeight,
+    Const.ScreenWidth - horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
   )
   img.draw(
     drawDock(weather, holidays),

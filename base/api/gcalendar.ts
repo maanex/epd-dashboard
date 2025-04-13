@@ -6,7 +6,10 @@ import consola from 'consola'
 const CREDENTIALS_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'client_secret.json')
 const TOKEN_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'token.json')
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar.readonly',
+  'https://www.googleapis.com/auth/tasks.readonly'
+]
 
 async function authorize() {
   try {
@@ -54,6 +57,35 @@ async function listCalendars(auth: any) {
   const calendar = google.calendar({ version: 'v3', auth })
   const res = await calendar.calendarList.list()
   return res.data.items ?? []
+}
+
+async function  listTasks(auth: any) {
+  const tasks = google.tasks({ version: 'v1', auth })
+  const res = await tasks.tasklists.list()
+  if (!res.data.items?.length)
+    return []
+
+  const entries = await Promise.all(res.data.items.map(async list => {
+    const res2 = await tasks.tasks.list({
+      tasklist: list.id!,
+      maxResults: 10,
+      auth
+    })
+    if (!res2.data.items?.length)
+      return []
+    return res2.data.items.map(task => ({
+      ...task,
+      partOf: list
+    }))
+  }))
+
+  return entries
+    .flat()
+    .sort((a, b) => {
+      const aDate = new Date(a.due || Number.MAX_SAFE_INTEGER)
+      const bDate = new Date(b.due || Number.MAX_SAFE_INTEGER)
+      return aDate.getTime() - bDate.getTime()
+    })
 }
 
 async function listUpcomingEvents(auth: any, calendarId: string) {
@@ -128,9 +160,16 @@ async function fetch(filter?: Filter) {
     })
   }))
 
-  return mapped
+  const events = mapped
     .flat()
     .sort((a, b) => a.start.getTime() - b.start.getTime())
+
+  const tasks = await listTasks(authClient)
+
+  return {
+    events,
+    tasks
+  }
 }
 
 export const useGCalendarApi = async (filter?: Filter) => {
@@ -148,7 +187,7 @@ export const useGCalendarApi = async (filter?: Filter) => {
   }
 
   return {
-    data,
+    ...data,
     refresh,
     assertRecentData
   }
