@@ -36,13 +36,9 @@ const weather = await useWeatherApi()
 consola.success('Weather loaded')
 
 consola.start('Loading gCalendar')
-// /*
 const calendar = await useGCalendarApi({
   blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
 })
-await fs.writeFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), JSON.stringify(calendar, null, 2))
-//*/ const calendar = JSON.parse(await fs.readFile(path.join(import.meta.dir, '..', 'temp/calendar.json'), 'utf-8')) as GCalendarApi
-//*/
 consola.success('gCalendar loaded')
 
 consola.start('Loading holidays')
@@ -55,7 +51,7 @@ function drawScreen() {
 
   const dayviewHeight = 100
   const dockHeight = 60
-  const horizontalSplit = 220
+  const horizontalSplit = 250
 
   img.draw(
     drawDayview(weather),
@@ -68,7 +64,7 @@ function drawScreen() {
     horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
   )
   img.draw(
-    drawQuote(),
+    drawQuote({ author: 'maanex', text: 'lorem' }),
     horizontalSplit, dayviewHeight,
     Const.ScreenWidth - horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
   )

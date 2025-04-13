@@ -318,12 +318,27 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       text,
       x,
       y,
-      size: 16 as (8 | 12 | 16 | 20 | 24),
-      font: 'monospace',
-      thresh: 0.9,
+      size: 16 as (8 | 12 | 16 | 20 | 24 | 'auto'),
       anchorX: 'left',
       anchorY: 'top',
-      maxWidth: 0
+      maxWidth: 0,
+      maxHeight: 0
+    }
+
+    function getSize() {
+      if (data.size !== 'auto')
+        return data.size
+
+      for (const option of [24, 20, 16, 12, 8] as const) {
+        const height = option
+        const width = cFont[option].width
+
+        const lines = TextUtils.sliceIntoNewlines(data.text, data.maxWidth / width)
+        if (lines.length * height <= data.maxHeight)
+          return option
+      }
+
+      return 8
     }
 
     const out = {
@@ -341,12 +356,8 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         data.y += ~~dy
         return out
       },
-      size: (size: 8 | 12 | 16 | 20 | 24) => {
+      size: (size: 8 | 12 | 16 | 20 | 24 | 'auto') => {
         data.size = size
-        return out
-      },
-      font: (font: string) => {
-        data.font = font
         return out
       },
       anchor: (x: 'left' | 'center' | 'right', y: 'top' | 'center' | 'bottom') => {
@@ -354,19 +365,20 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         data.anchorY = y
         return out
       },
-      threshold: (thresh: number) => {
-        data.thresh = thresh
-        return out
-      },
       maxWidth: (maxWidth: number) => {
         data.maxWidth = maxWidth
         return out
       },
+      maxHeight: (maxHeight: number) => {
+        data.maxHeight = maxHeight
+        return out
+      },
       render: (style: FillStyle, mix?: MixMode) => {
-        const font = cFont[data.size]
+        const size = getSize()
+        const font = cFont[size]
         const lines = TextUtils.sliceIntoNewlines(data.text, data.maxWidth / font.width)
         const boxWidth = Math.max(...lines.map(line => line.length * font.width))
-        const boxHeight = lines.length * data.size
+        const boxHeight = lines.length * size
 
         let renderX = data.x
         if (data.anchorX === 'center') renderX -= boxWidth / 2
@@ -377,7 +389,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i]
-          const cY = renderY + i * data.size
+          const cY = renderY + i * size
           for (let j = 0; j < line.length; j++) {
             const char = line[j]
             const charData = (font as any)[char]
@@ -385,7 +397,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
             const cX = renderX + j * font.width
 
             let byte = 0
-            for (let row = 0; row < data.size; row++) {
+            for (let row = 0; row < size; row++) {
               for (let col = 0; col < font.width; col++) {
                 // console.log(row, col, charData[byte].toString(2).padStart(8, '0'), '.', (0x80 >> (col % 8)).toString(2).padStart(8, '0'), '.', charData[byte] & (0x80 >> (col % 8)))
                 if (charData[byte] & (0x80 >> (col % 8)))
@@ -404,10 +416,11 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         return out
       },
       toRect: () => {
-        const font = cFont[data.size]
+        const size = getSize()
+        const font = cFont[size]
         const lines = TextUtils.sliceIntoNewlines(data.text, data.maxWidth / font.width)
         const boxWidth = Math.max(...lines.map(line => line.length * font.width))
-        const boxHeight = lines.length * data.size
+        const boxHeight = lines.length * size
 
         let renderX = data.x
         if (data.anchorX === 'center') renderX -= boxWidth / 2
@@ -426,11 +439,12 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     return out
   }
 
-  function newTriangle(x = 0, y = 0, size = 20) {
+  function newTriangle(x = 0, y = 0, size = 20, stretch = 1) {
     const tri = {
       x,
       y,
       size,
+      stretch,
       rot: 0
     }
 
@@ -449,6 +463,10 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         tri.size = ~~size
         return out
       },
+      stretch: (stretch: number) => {
+        tri.stretch = stretch
+        return out
+      },
       rotate: (rot: number) => {
         tri.rot = rot
         return out
@@ -457,9 +475,9 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         // chatgpt ass function
         const x0 = tri.x
         const y0 = tri.y - tri.size
-        const x1 = tri.x - (tri.size * Math.cos(Math.PI / 6))
+        const x1 = tri.x - (tri.size * Math.cos(Math.PI / 6)) * tri.stretch
         const y1 = tri.y + (tri.size * Math.sin(Math.PI / 6))
-        const x2 = tri.x + (tri.size * Math.cos(Math.PI / 6))
+        const x2 = tri.x + (tri.size * Math.cos(Math.PI / 6)) * tri.stretch
         const y2 = y1
 
         const [x0r, y0r] = rotatePoint(x0, y0, tri.rot, tri.x, tri.y)
@@ -468,19 +486,22 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
 
         const edgeFunction = (ax: number, ay: number, bx: number, by: number, px: number, py: number) => (px - ax) * (by - ay) - (py - ay) * (bx - ax)
 
-        const minX = Math.min(x0r, x1r, x2r)
-        const maxX = Math.max(x0r, x1r, x2r)
-        const minY = Math.min(y0r, y1r, y2r)
-        const maxY = Math.max(y0r, y1r, y2r)
-      
+        const minX = Math.floor(Math.min(x0r, x1r, x2r))
+        const maxX = Math.ceil(Math.max(x0r, x1r, x2r))
+        const minY = Math.floor(Math.min(y0r, y1r, y2r))
+        const maxY = Math.ceil(Math.max(y0r, y1r, y2r))
+
         for (let y = minY; y <= maxY; y++) {
           for (let x = minX; x <= maxX; x++) {
             let w0 = edgeFunction(x1r, y1r, x2r, y2r, x, y)
             let w1 = edgeFunction(x2r, y2r, x0r, y0r, x, y)
             let w2 = edgeFunction(x0r, y0r, x1r, y1r, x, y)
-            if (w0 >= 0 && w1 >= 0 && w2 >= 0) setPixel(x, y, rasterize(style, x, y), mix)
+            if (w0 >= 0 && w1 >= 0 && w2 >= 0)
+              setPixel(x, y, rasterize(style, x, y), mix)
           }
         }
+
+        return out
       }
     }
     return out
