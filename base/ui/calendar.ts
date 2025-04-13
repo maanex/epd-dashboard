@@ -112,7 +112,7 @@ export function drawCalendarAgenda(calendar: GCalendarApi): Renderer {
       y += textEvent.toRect().getSize().height + 10
     }
 
-    if (allDayers.length || timedEvents.length) {
+    if ((allDayers.length || timedEvents.length) && calendar.tasks.length) {
       y += padding
       paint
         .newRect(padding, y, maxWidth, 1)
@@ -126,7 +126,6 @@ export function drawCalendarAgenda(calendar: GCalendarApi): Renderer {
       if (!task) break
 
       const isInDefaultList = task.partOf.title === defaultTaskListName
-      console.log(task)
 
       paint.newRect(padding, y-1, 12, 12)
         .round(2)

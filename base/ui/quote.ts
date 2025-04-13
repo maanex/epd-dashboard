@@ -1,7 +1,13 @@
 import type { Renderer } from "../lib/image"
 
 
-export function drawQuote(): Renderer {
+type QuoteContent = {
+  author: string
+  text?: string
+  image?: string
+}
+
+export function drawQuote(content: QuoteContent): Renderer {
   return ({ paint, width, height }) => {
     const padding = 15
     const maxWidth = width - padding * 2
