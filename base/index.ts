@@ -36,9 +36,9 @@ const weather = await useWeatherApi()
 consola.success('Weather loaded')
 
 consola.start('Loading gCalendar')
-const calendar = await useGCalendarApi({
-  blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
-})
+// const calendar = await useGCalendarApi({
+//   blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
+// })
 consola.success('gCalendar loaded')
 
 consola.start('Loading holidays')
@@ -46,29 +46,33 @@ const holidays = await useHolidaysApi()
 consola.success('Holidays loaded')
 
 
-function drawScreen() {
+async function drawScreen() {
   const img = useImage()
 
   const dayviewHeight = 100
   const dockHeight = 60
   const horizontalSplit = 250
 
-  img.draw(
+  await img.draw(
     drawDayview(weather),
     0, 0,
     Const.ScreenWidth, dayviewHeight
   )
-  img.draw(
-    drawCalendarAgenda(calendar),
-    0, dayviewHeight,
-    horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
-  )
-  img.draw(
-    drawQuote({ author: 'maanex', text: 'lorem' }),
+  // img.draw(
+  //   drawCalendarAgenda(calendar),
+  //   0, dayviewHeight,
+  //   horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
+  // )
+  await img.draw(
+    drawQuote({
+      author: 'maanex',
+      text: 'lorem ipsum dolor sit amet ligma figma sigma ha haha lorem',
+      image: 'https://media.discordapp.net/attachments/709144084933247096/1357021815268053313/image.png?ex=67fdd9cd&is=67fc884d&hm=58332d14c895eb922c8573e69b774611447e287037c2e746e9e778e2babb0bc5&=&format=webp&quality=lossless&width=1474&height=1428'
+    }),
     horizontalSplit, dayviewHeight,
     Const.ScreenWidth - horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
   )
-  img.draw(
+  await img.draw(
     drawDock(weather, holidays),
     0, Const.ScreenHeight - dockHeight,
     Const.ScreenWidth, dockHeight
@@ -84,7 +88,7 @@ async function drawAndUpdate(forceFullUpdate: boolean) {
     return
 
   lastChange = Date.now()
-  const img = drawScreen()
+  const img = await drawScreen()
   const rendered = img.renderFullBw()
   consola.info(`Frame rendered in ${Date.now() - lastChange}ms`)
   await img.exportFullBw('test.png')

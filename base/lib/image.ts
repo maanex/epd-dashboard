@@ -20,7 +20,7 @@ export type Renderer = (img: {
   paint: ReturnType<typeof usePaint>
   width: number
   height: number
-}) => void
+}) => void | Promise<void>
 
 export const useImage = () => {
   const { ScreenWidth, ScreenHeight } = Const
@@ -30,9 +30,9 @@ export const useImage = () => {
   ctx.fillStyle = 'white'
   ctx.fillRect(0, 0, ScreenWidth, ScreenHeight)
 
-  function draw(renderer: Renderer, frameX?: number, frameY?: number, frameWidth?: number, frameHeight?: number) {
+  async function draw(renderer: Renderer, frameX?: number, frameY?: number, frameWidth?: number, frameHeight?: number) {
     const paint = usePaint(ctx, frameX, frameY, frameWidth, frameHeight)
-    renderer({
+    await renderer({
       ctx,
       paint,
       width: frameWidth ?? ScreenWidth,

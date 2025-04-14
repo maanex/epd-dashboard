@@ -321,6 +321,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       size: 16 as (8 | 12 | 16 | 20 | 24 | 'auto'),
       anchorX: 'left',
       anchorY: 'top',
+      justify: 'left',
       maxWidth: 0,
       maxHeight: 0
     }
@@ -365,6 +366,10 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         data.anchorY = y
         return out
       },
+      justify: (dir: 'left' | 'center' | 'right') => {
+        data.justify = dir
+        return out
+      },
       maxWidth: (maxWidth: number) => {
         data.maxWidth = maxWidth
         return out
@@ -387,14 +392,21 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         if (data.anchorY === 'center') renderY -= boxHeight / 2
         if (data.anchorY === 'bottom') renderY -= boxHeight
 
+        const maxWidth = Math.max(...lines.map(l => l.length)) * font.width
+
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i]
+          const lineWidth = line.length * font.width
           const cY = renderY + i * size
           for (let j = 0; j < line.length; j++) {
             const char = line[j]
             const charData = (font as any)[char]
             if (!charData) continue
-            const cX = renderX + j * font.width
+            let cX = renderX + j * font.width
+            if (data.justify === 'center')
+              cX += (maxWidth - lineWidth) / 2
+            else if (data.justify === 'right')
+              cX += maxWidth - lineWidth
 
             let byte = 0
             for (let row = 0; row < size; row++) {

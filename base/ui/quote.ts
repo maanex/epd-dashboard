@@ -1,4 +1,5 @@
 import type { Renderer } from "../lib/image"
+import { loadAndDitherImage, loadDitherAndDrawImage } from "../lib/imgdither"
 
 
 type QuoteContent = {
@@ -8,7 +9,7 @@ type QuoteContent = {
 }
 
 export function drawQuote(content: QuoteContent): Renderer {
-  return ({ paint, width, height }) => {
+  return async ({ paint, width, height }) => {
     const padding = 15
     const maxWidth = width - padding * 2
     const authorHeight = 28
@@ -49,11 +50,15 @@ export function drawQuote(content: QuoteContent): Renderer {
       .render('black')
 
     if (content.image) {
+      paint.transform(padding + 2, padding + 2)
+      await loadDitherAndDrawImage(content.image, maxWidth - 4, height - padding*2 - authorHeight - 4, paint)
+      paint.transform(-padding - 2, -padding - 2)
     } else {
       const textPadding = padding * 2
       paint.newBitText(content.text ?? '')
         .at(width/2, (height - authorHeight - padding*2) / 2 + padding)
         .anchor('center', 'center')
+        .justify('center')
         .size('auto')
         .maxWidth(maxWidth - textPadding*2)
         .maxHeight(height - authorHeight - padding*2 - textPadding*2)
