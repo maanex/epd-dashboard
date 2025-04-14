@@ -22,8 +22,7 @@ export type Renderer = (img: {
   height: number
 }) => void | Promise<void>
 
-export const useImage = () => {
-  const { ScreenWidth, ScreenHeight } = Const
+export const useImage = (ScreenWidth = Const.ScreenWidth, ScreenHeight = Const.ScreenHeight) => {
   const canvas = createCanvas(ScreenWidth, ScreenHeight)
   const ctx = canvas.getContext('2d')
 
@@ -58,7 +57,7 @@ export const useImage = () => {
   }
 
   /** render full as black and white, 1 bit per pixel */
-  async function exportFullBw(filename: string) {
+  async function exportFullBw(filename?: string) {
     const exportCanvas = createCanvas(ScreenWidth, ScreenHeight)
     const exportCtx = exportCanvas.getContext('2d')
 
@@ -74,7 +73,9 @@ export const useImage = () => {
 
     exportCtx.putImageData(imageDataContainer, 0, 0)
     const exportPng = await exportCanvas.encode('png')
-    await promises.writeFile(join(import.meta.dirname, '..', '..', 'output', filename), exportPng)
+    if (filename)
+      await promises.writeFile(join(import.meta.dirname, '..', '..', 'output', filename), exportPng)
+    return exportPng
   }
 
   return {

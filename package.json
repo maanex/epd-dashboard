@@ -13,6 +13,7 @@
     "axios": "^1.8.4",
     "canvas-txt": "^4.1.1",
     "consola": "^3.4.2",
+    "discord.js": "^14.18.0",
     "googleapis": "^148.0.0",
     "mqtt": "^5.10.3",
     "sharp": "^0.34.1"

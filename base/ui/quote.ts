@@ -1,5 +1,5 @@
 import type { Renderer } from "../lib/image"
-import { loadAndDitherImage, loadDitherAndDrawImage } from "../lib/imgdither"
+import { drawDitheredImage, loadAndDitherImage } from "../lib/imgdither"
 
 
 type QuoteContent = {
@@ -17,9 +17,22 @@ export function drawQuote(content: QuoteContent): Renderer {
     paint.newRect(0, 0, width, height)
       .fill('white')
 
+    let contentWidth = maxWidth
+    let contentHeight = height - padding * 2 - authorHeight
+    let contentImage: Buffer | null = null
+
+    if (content.image) {
+      const { dithered, width: renderWidth, height: renderHeight } = await loadAndDitherImage(content.image, maxWidth - 3, height - padding*2 - authorHeight - 3)
+      contentWidth = renderWidth + 2
+      contentHeight = renderHeight + 2
+      contentImage = dithered
+    }
+    const xShift = maxWidth - contentWidth
+    const yShift = height - contentHeight - authorHeight - padding * 2
+
     const innerRect = paint.newRect()
-      .from(padding, padding)
-      .sized(maxWidth, height - padding*2 - authorHeight)
+      .from(padding + xShift, padding + yShift)
+      .sized(contentWidth, contentHeight)
       .round(5)
       .useCopy(r => r
         .translate(3, 3)
@@ -50,9 +63,9 @@ export function drawQuote(content: QuoteContent): Renderer {
       .render('black')
 
     if (content.image) {
-      paint.transform(padding + 2, padding + 2)
-      await loadDitherAndDrawImage(content.image, maxWidth - 4, height - padding*2 - authorHeight - 4, paint)
-      paint.transform(-padding - 2, -padding - 2)
+      paint.transform(padding + 1 + xShift, padding + 1 + yShift)
+      await drawDitheredImage(contentImage!, contentWidth - 2, contentHeight - 2, paint, 5)
+      paint.transform(-padding - 1 - xShift, -padding - 1 - yShift)
     } else {
       const textPadding = padding * 2
       paint.newBitText(content.text ?? '')

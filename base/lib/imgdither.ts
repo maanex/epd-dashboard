@@ -45,16 +45,36 @@ export async function loadAndDitherImage(url: string, maxWidth: number, maxHeigh
   return { dithered, width, height }
 }
 
-export async function loadDitherAndDrawImage(url: string, width: number, height: number, paint: ReturnType<typeof usePaint>) {
-  const { dithered, width: renderWidth, height: renderHeight } = await loadAndDitherImage(url, width, height)
-  const startX = (width - renderWidth) / 2
-  const startY = (height - renderHeight) / 2
+function checkBr(x: number, y: number, rectW: number, rectH: number, br: number) {
+  if (br === 0)
+    return false
 
-  for (let y = 0; y < renderHeight; y++) {
-    for (let x = 0; x < renderWidth; x++) {
-      const black = dithered[(y * renderWidth + x) * 3] > 128
-      paint.setPixel(startX + x, startY + y, black ? 1 : 0)
+  const dTop = y
+  const dBottom = rectH - y
+  const dLeft = x
+  const dRight = rectW - x
+
+  if (br > 0) {
+    if (Math.sqrt(dTop**2 * dLeft**2) < br) return true
+    if (Math.sqrt(dTop**2 * dRight**2) < br) return true
+    if (Math.sqrt(dBottom**2 * dLeft**2) < br) return true
+    if (Math.sqrt(dBottom**2 * dRight**2) < br) return true
+  } else {
+    if (Math.sqrt(dTop**3 * dLeft**3) < br**2) return true
+    if (Math.sqrt(dTop**3 * dRight**3) < br**2) return true
+    if (Math.sqrt(dBottom**3 * dLeft**3) < br**2) return true
+    if (Math.sqrt(dBottom**3 * dRight**3) < br**2) return true
+  }
+  return false
+}
+
+export async function drawDitheredImage(buffer: Buffer, width: number, height: number, paint: ReturnType<typeof usePaint>, round = 0) {
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const black = buffer[(y * width + x) * 3] > 128
+      if (round !== 0 && checkBr(x, y, width, height, round))
+        continue
+      paint.setPixel(x, y, black ? 1 : 0)
     }
   }
-
 }
