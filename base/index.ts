@@ -46,6 +46,10 @@ consola.success('Holidays loaded')
 
 
 async function drawScreen() {
+  await weather.assertRecentData()
+  await calendar.assertRecentData()
+  await holidays.assertRecentData()
+
   const img = useImage()
 
   const dayviewHeight = 100
@@ -67,7 +71,7 @@ async function drawScreen() {
       author: 'maanex',
       text: 'lorem ipsum dolor sittim (which is the opposite of standim)',
       // image: 'https://media.discordapp.net/attachments/709144084933247096/1357021815268053313/image.png?ex=67fdd9cd&is=67fc884d&hm=58332d14c895eb922c8573e69b774611447e287037c2e746e9e778e2babb0bc5&=&format=webp&quality=lossless&width=1474&height=1428'
-      image: 'https://i.imgflip.com/1hnv2v.jpg?a484440'
+      image: 'https://media.tenor.com/K2bnpusQYIMAAAAM/silly-cat.gif'
     }),
     horizontalSplit, dayviewHeight,
     Const.ScreenWidth - horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight

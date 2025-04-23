@@ -28,8 +28,7 @@ export async function runDiscordBot() {
     if (message.channelId !== channel)
       return
 
-    // await message.react('👍')
-    // await message.react('👎')
+    await message.react('🫦')
 
     if (!message.deletable)
       return message.reply('Ey, delete this')
@@ -94,6 +93,23 @@ export async function runDiscordBot() {
         {
           attachment: Buffer.from(file),
           name: fileName
+        }
+      ],
+      flags: 32768,
+      components: [
+        {
+          type: 12,
+          items: [
+            {
+              media: {
+                url: `attachment://${fileName}`,
+              }
+            }
+          ]
+        },
+        {
+          type: 10,
+          content: `-# Vote below  —  submitted by <@${message.author.id}>`,
         }
       ]
     })

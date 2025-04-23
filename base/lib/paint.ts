@@ -315,7 +315,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
 
   function newBitText(text: string, x = 0, y = 0) {
     const data = {
-      text,
+      text: substituteText(text),
       x,
       y,
       size: 16 as (8 | 12 | 16 | 20 | 24 | 'auto'),
@@ -324,6 +324,18 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       justify: 'left',
       maxWidth: 0,
       maxHeight: 0
+    }
+
+    function substituteText(text: string) {
+      return text
+        .replaceAll('ä', 'ae')
+        .replaceAll('Ä', 'AE')
+        .replaceAll('ö', 'oe')
+        .replaceAll('Ö', 'OE')
+        .replaceAll('ü', 'ue')
+        .replaceAll('Ü', 'UE')
+        .replaceAll('ß', 'ss')
+        .replaceAll('ẞ', 'SS')
     }
 
     function getSize() {
@@ -344,7 +356,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
 
     const out = {
       text: (text: string) => {
-        data.text = text
+        data.text = substituteText(text)
         return out
       },
       at: (x: number, y: number) => {
