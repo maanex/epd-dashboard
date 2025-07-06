@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { ButtonBuilder, ButtonStyle, ChannelType, Client, ComponentType, Events, GatewayIntentBits, TextChannel } from 'discord.js'
+import { ChannelType, Client, Events, GatewayIntentBits, TextChannel } from 'discord.js'
 import consola from 'consola'
 import { useImage } from '../lib/image'
 import { drawQuote } from '../ui/quote'

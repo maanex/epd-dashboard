@@ -1,108 +1,64 @@
-/* Includes ------------------------------------------------------------------*/
 #include "DEV_Config.h"
 #include "EPD.h"
-#include "network.h"
 #include "display.h"
-#include <stdlib.h>
+#include "env.h"
+#include <Wire.h>
+#include <Adafruit_BMP085.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <esp_sleep.h>
+
+const char* WIFI_SSID = ENV(ENV_WIFI_SSID);
+const char* WIFI_PASS = ENV(ENV_WIFI_PASS);
+const char* IMG_URL = ENV(ENV_IMG_URL);
 
 
-int part_x = 0;
-int part_y = 0;
-int part_w = 0;
-int part_h = 0;
-int current_mode = -1;
-
-void on_message(int mode, size_t length, size_t index, bool done, char* message) {
-  if (mode == MODE_FULL) {
-    if (current_mode != MODE_FULL) {
-      current_mode = MODE_FULL;
-      disp_init_full();
-    }
-
-    printf("Full! Length: %d\n", length);
-    if (index == 0) {
-      disp_raw_begin(800, 480);
-    }
-
-    for (int i = 0; i < length; i++) {
-      disp_raw_stream_pixels(&message[i], 800, 480, i + index);
-    }
-
-    if (done) {
-      disp_raw_render_full();
-    }
-  } else if (mode == MODE_PART) {
-    if (current_mode != MODE_PART) {
-      current_mode = MODE_PART;
-      disp_init_part();
-    }
-
-    if (index == 0) {
-      part_x = message[0] << 8 | message[1];
-      part_y = message[2] << 8 | message[3];
-      part_w = message[4] << 8 | message[5];
-      part_h = message[6] << 8 | message[7];
-
-      printf("Part! x: %d, y: %d, w: %d, h: %d\n", part_x, part_y, part_w, part_h);
-
-      disp_raw_begin(part_w, part_h);
-
-      for (int i = 8; i < length; i++) {
-        disp_raw_stream_pixels(&message[i], part_w, part_h, i + index - 8);
-      }
-    } else {
-      for (int i = 0; i < length; i++) {
-        disp_raw_stream_pixels(&message[i], part_w, part_h, i + index);
-      }
-    }
-
-    if (done) {
-      disp_raw_render_part(part_x, part_y, part_w, part_h);
-    }
-  }
-}
-
-int setup_success = 0;
+Adafruit_BMP085 bmp;
 
 void setup() {
-  printf("Init\r\n");
-  DEV_Delay_ms(500);
+  Serial.begin(115200);
 
-  printf("Display Init\r\n");
-  disp_init();
-  DEV_Delay_ms(500);
+  disp_init_full();
+  bmp.begin();
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-  printf("Printing connect text\r\n");
-  disp_print_raw("Connecting to WiFi...");
-  DEV_Delay_ms(500);
-
-  // Network
-  net_provide_callback(on_message);
-  int net_init_res;
-  if ((net_init_res = net_init()) != 0) {
-    if (net_init_res == ERROR_WIFI_TIMEOUT) {
-      disp_print_raw(" WIFI CONNECTION TIMEOUT ");
-    } else if (net_init_res == ERROR_MQTT_TIMEOUT) {
-      disp_print_raw(" MQTT CONNECTION TIMEOUT ");
-    } else {
-      disp_print_raw(" UNKNOWN ERROR ON WIFI INIT! ");
-    }
-    DEV_Delay_ms(50000);
-    disp_clear();
-    return;
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
+    delay(500);
   }
 
-  disp_print_raw("   WiFi connected!   ");
-  DEV_Delay_ms(3000);
-  disp_clear();
+  if (WiFi.status() == WL_CONNECTED) {
+    float temp = bmp.readTemperature();
+    char fullUrl[256];
+    snprintf(fullUrl, sizeof(fullUrl), "%s?temp=%.2f", IMG_URL, temp);
 
-  DEV_Delay_ms(500);
-  EPD_7IN5_V2_Sleep();
-  printf("Going to sleep...\r\n");
-  setup_success = 1;
+    HTTPClient http;
+    http.begin(fullUrl);
+    int httpCode = http.GET();
+    if (httpCode > 0) {
+      WiFiClient* stream = http.getStreamPtr();
 
-  return;
+      disp_raw_begin(800, 480);
+      int position = 0;
+      while (http.connected() && stream->available()) {
+        uint8_t buffer[128];
+        size_t len = stream->readBytes(buffer, sizeof(buffer));
+
+        for (int i = 0; i < len; i++) {
+          disp_raw_stream_pixels(&buffer[i], 800, 480, i + position);
+        }
+        position += len;
+      }
+
+      disp_raw_render_full();
+    }
+    http.end();
+  }
+
+  WiFi.disconnect(true);
+  esp_sleep_enable_timer_wakeup(10 * 60 * 1000000ULL); // 10 min
+  esp_deep_sleep_start();
 }
 
-void loop() {
-}
+void loop() {}
+

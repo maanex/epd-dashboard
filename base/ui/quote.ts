@@ -56,7 +56,7 @@ export function drawQuote(content: QuoteContent): Renderer {
 
     innerRect.fill('white')
 
-    paint.newBitText(content.author)
+    paint.newBitText(content.author + Math.random())
       .at(width - padding * 4, height - padding + 5)
       .anchor('center', 'bottom')
       .size(12)

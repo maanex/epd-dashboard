@@ -1,3 +1,4 @@
+import express from "express"
 import { useWeatherApi } from "./api/weather"
 import { useImage } from "./lib/image"
 import { TopicUpFull, TopicUpPart, useMqtt, useMqttStub } from "./lib/mqtt"
@@ -85,57 +86,69 @@ async function drawScreen() {
   return img
 }
 
-let lastRendered: Buffer | null = null
-let lastChange = 0
-async function drawAndUpdate(forceFullUpdate: boolean) {
-  if (Date.now() - lastChange < 5000)
-    return
+// let lastRendered: Buffer | null = null
+// let lastChange = 0
+// async function drawAndUpdate(forceFullUpdate: boolean) {
+//   if (Date.now() - lastChange < 5000)
+//     return
 
-  lastChange = Date.now()
+//   lastChange = Date.now()
+//   const img = await drawScreen()
+//   const rendered = img.renderFullBw()
+//   consola.info(`Frame rendered in ${Date.now() - lastChange}ms`)
+//   await img.exportFullBw('test.png')
+
+//   if (!lastRendered || forceFullUpdate) {
+//     mqtt.sendBinary(TopicUpFull, rendered)
+//     lastRendered = rendered
+//     return
+//   }
+
+//   console.log('Partial update maybe')
+//   if (ImgDiff.areIdentical(lastRendered, rendered))
+//     return
+
+//   const diff = ImgDiff.xor(lastRendered, rendered)
+//   await ImgDebug.renderBits(diff, Const.ScreenWidth, Const.ScreenHeight)
+//   const bounds = ImgDiff.getBounds(diff, Const.ScreenWidth, Const.ScreenHeight)
+//   console.log('Partial update', bounds, bounds.w * bounds.h, Const.MaxPixelsForPartialUpdate)
+//   if (bounds.w * bounds.h > Const.MaxPixelsForPartialUpdate) {
+//     mqtt.sendBinary(TopicUpFull, rendered)
+//     lastRendered = rendered
+//     return
+//   }
+
+//   const buff = Buffer.alloc(8 + Math.ceil(bounds.w * bounds.h / 8))
+//   buff.writeUInt16BE(bounds.x, 0)
+//   buff.writeUInt16BE(bounds.y, 2)
+//   buff.writeUInt16BE(bounds.w, 4)
+//   buff.writeUInt16BE(bounds.h, 6)
+//   ImgDiff.copyBounds(diff, buff, 8, bounds, Const.ScreenWidth)
+//   mqtt.sendBinary(TopicUpPart, buff)
+// }
+
+// async function run() {
+//   consola.log('First')
+//   await drawAndUpdate(false)
+//   await new Promise(resolve => setTimeout(resolve, 7000))
+//   console.log('Second')
+//   await drawAndUpdate(false)
+// }
+// run()
+
+const app = express()
+app.get('/', async (req, res) => {
+  consola.info(`Request from ${req.ip} with ${Object.keys(req.query)}`)
+  const start = Date.now()
   const img = await drawScreen()
-  const rendered = img.renderFullBw()
-  consola.info(`Frame rendered in ${Date.now() - lastChange}ms`)
-  await img.exportFullBw('test.png')
-
-  if (!lastRendered || forceFullUpdate) {
-    mqtt.sendBinary(TopicUpFull, rendered)
-    lastRendered = rendered
-    return
-  }
-
-  console.log('Partial update maybe')
-  if (ImgDiff.areIdentical(lastRendered, rendered))
-    return
-
-  const diff = ImgDiff.xor(lastRendered, rendered)
-  await ImgDebug.renderBits(diff, Const.ScreenWidth, Const.ScreenHeight)
-  const bounds = ImgDiff.getBounds(diff, Const.ScreenWidth, Const.ScreenHeight)
-  console.log('Partial update', bounds, bounds.w * bounds.h, Const.MaxPixelsForPartialUpdate)
-  if (bounds.w * bounds.h > Const.MaxPixelsForPartialUpdate) {
-    mqtt.sendBinary(TopicUpFull, rendered)
-    lastRendered = rendered
-    return
-  }
-
-  const buff = Buffer.alloc(8 + Math.ceil(bounds.w * bounds.h / 8))
-  buff.writeUInt16BE(bounds.x, 0)
-  buff.writeUInt16BE(bounds.y, 2)
-  buff.writeUInt16BE(bounds.w, 4)
-  buff.writeUInt16BE(bounds.h, 6)
-  ImgDiff.copyBounds(diff, buff, 8, bounds, Const.ScreenWidth)
-  mqtt.sendBinary(TopicUpPart, buff)
-}
-
-async function run() {
-  consola.log('First')
-  await drawAndUpdate(false)
-  // await new Promise(resolve => setTimeout(resolve, 7000))
-  // console.log('Second')
-  // await drawAndUpdate(false)
-}
-run()
+  const buffer = await img.renderFullBw()
+  consola.info(`Completed in ${Date.now() - start}ms`)
+  res.setHeader('Content-Type', 'image/png')
+  res.send(buffer)
+})
+app.listen(3000, '0.0.0.0', () => consola.log('Server is running on http://localhost:3000'))
 
 // // Clear epd screen
 // mqtt.sendBinary(TopicUpFull, new Buffer(0))
 
-const server = runDiscordBot()
+// const server = runDiscordBot()

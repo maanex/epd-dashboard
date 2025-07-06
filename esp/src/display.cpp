@@ -65,7 +65,7 @@ UBYTE* disp_raw_begin(const int w, const int h) {
   return ImageBuffer;
 }
 
-void disp_raw_stream_pixels(char* pixels, const int w, const int h, const int offset) {
+void disp_raw_stream_pixels(uint8_t* pixels, const int w, const int h, const int offset) {
   int x = 0;
   int y = 0;
   int val = 0;

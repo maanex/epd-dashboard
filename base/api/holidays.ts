@@ -12,6 +12,10 @@ type Holiday = {
   regionalScope: string
   temporalScope: string
   nationwide: boolean
+  subdivisions?: Array<{
+    code: string
+    shortName: string
+  }>
 }
 
 export const useHolidaysApi = async () => {
@@ -38,10 +42,14 @@ export const useHolidaysApi = async () => {
 
   //
 
+  function isHolidayAtHome(holly: Holiday) {
+    return holly.nationwide || (holly.regionalScope === 'Regional' && holly.subdivisions?.some(sub => sub.code === 'DE-BY'))
+  }
+
   function isHolidayInXDays(x: number) {
     const date = new Date(Date.now() + x * 1000 * 60 * 60 * 24)
     const dateString = date.toISOString().split('T')[0]
-    return data.some(holly => holly.nationwide && holly.startDate === dateString)
+    return data.some(holly => isHolidayAtHome(holly) && holly.startDate === dateString)
   }
 
   return {
