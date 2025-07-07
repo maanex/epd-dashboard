@@ -16,6 +16,7 @@ import axios from "axios"
 
 
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'), 'Modak')
+GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'NotoSans.ttf'), 'NotoSans')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
 

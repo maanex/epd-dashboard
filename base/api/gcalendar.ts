@@ -182,7 +182,7 @@ export const useGCalendarApi = async (filter?: Filter) => {
   }
   
   async function assertRecentData() {
-    if (Date.now() - dataTime > 1000 * 60 * 60)
+    if (Date.now() - dataTime > 1000 * 60 * 30) // 30 minutes
       await refresh()
   }
 

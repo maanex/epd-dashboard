@@ -1,5 +1,4 @@
 import { createCanvas, type SKRSContext2D } from "@napi-rs/canvas"
-import { drawText, splitText, getTextHeight } from 'canvas-txt'
 import { TextUtils } from "./text-utils"
 import { cFont } from "./c-font"
 
@@ -174,7 +173,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       x,
       y,
       size,
-      font: 'monospace',
+      font: 'NotoSans',
       thresh: 0.9,
       anchorX: 'left',
       anchorY: 'top',
@@ -221,7 +220,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       render: (style: FillStyle, mix?: MixMode) => {
         ctx.font = `${data.size}px '${data.font}'`
         const metrics = ctx.measureText(data.text)
-        const innerWidth = ~~(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
+        const innerWidth = ~~((metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight) * 1.05)
         const innerHeight = ~~(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
         const innerCanvas = createCanvas(innerWidth, innerHeight)
         const innerCtx = innerCanvas.getContext('2d')!
@@ -254,7 +253,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       renderOutline: (style: FillStyle, size: number, mix?: MixMode) => {
         ctx.font = `${data.size}px '${data.font}'`
         const metrics = ctx.measureText(data.text)
-        const innerWidth = ~~(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
+        const innerWidth = ~~((metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight) * 1.05)
         const innerHeight = ~~(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
         const innerCanvas = createCanvas(innerWidth, innerHeight)
         const innerCtx = innerCanvas.getContext('2d')!
@@ -293,7 +292,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       toRect: () => {
         ctx.font = `${data.size}px '${data.font}'`
         const metrics = ctx.measureText(data.text)
-        const innerWidth = ~~(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
+        const innerWidth = ~~((metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight) * 1.05)
         const innerHeight = ~~(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
 
         let renderX = data.x

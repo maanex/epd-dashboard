@@ -36,7 +36,7 @@ export const useHolidaysApi = async () => {
   }
 
   async function assertRecentData() {
-    if (Date.now() - dataTime > 1000 * 60 * 60)
+    if (Date.now() - dataTime > 1000 * 60 * 30) // 30 minutes
       await refresh()
   }
 
