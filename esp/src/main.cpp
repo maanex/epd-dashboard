@@ -47,7 +47,7 @@ void setup() {
     Serial.println(temp);
 
     char fullUrl[256];
-    snprintf(fullUrl, sizeof(fullUrl), "http://%s:3000/r?temp=%.2f", IMG_URL, temp);
+    snprintf(fullUrl, sizeof(fullUrl), "http://%s:3034/r?temp=%.2f", IMG_URL, temp);
     Serial.print("Requesting image from: ");
     Serial.println(fullUrl);
 
@@ -73,7 +73,7 @@ void setup() {
         if (!firstByteRead && len > 0) {
           sleepMinutes = buffer[0];
           if (sleepMinutes == 0 || sleepMinutes > 4*60) {
-            sleepMinutes = 15;
+            sleepMinutes = 10;
           }
           firstByteRead = true;
           start = 1;

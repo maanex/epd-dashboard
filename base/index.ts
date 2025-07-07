@@ -1,13 +1,10 @@
 import express from "express"
 import { useWeatherApi } from "./api/weather"
 import { useImage } from "./lib/image"
-import { TopicUpFull, TopicUpPart, useMqtt, useMqttStub } from "./lib/mqtt"
 import { drawDayview } from "./ui/dayview"
 import { GlobalFonts } from '@napi-rs/canvas'
 import * as path from 'path'
 import { Const } from "./lib/const"
-import { ImgDiff } from "./lib/imgdiff"
-import { ImgDebug } from "./lib/imgdebug"
 import { drawQuote } from "./ui/quote"
 import { drawDock } from "./ui/dock"
 import { useGCalendarApi } from "./api/gcalendar"
@@ -15,6 +12,7 @@ import { drawCalendarAgenda } from "./ui/calendar"
 import consola from "consola"
 import { useHolidaysApi } from "./api/holidays"
 import { runDiscordBot } from "./discord/bot"
+import axios from "axios"
 
 
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'), 'Modak')
@@ -93,7 +91,9 @@ async function drawScreen(localTemperature?: number | string) {
 
 const app = express()
 app.get('/r', async (req, res) => {
-  consola.info(`Request from ${req.ip} with ${Object.keys(req.query)}`)
+  const log = `Request from ${req.ip} with ${Object.keys(req.query)}`
+  consola.info(log)
+  axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log })
 
   const localTemperature = req.query.temp ? String(req.query.temp) : undefined
   const start = Date.now()
@@ -105,7 +105,9 @@ app.get('/r', async (req, res) => {
   res.send(Buffer.concat([ sleepBuffer, imgBuffer ]))
 })
 app.get('/', async (req, res) => {
-  consola.info(`View from ${req.ip} with ${Object.keys(req.query)}`)
+  const log = `View from ${req.ip} with ${Object.keys(req.query)}`
+  consola.info(log)
+  axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log })
 
   const localTemperature = req.query.temp ? String(req.query.temp) : undefined
   const start = Date.now()
@@ -117,7 +119,7 @@ app.get('/', async (req, res) => {
   res.setHeader('Content-Type', 'image/png')
   res.send(imgBuffer)
 })
-app.listen(3000, '0.0.0.0', () => consola.log('Server is running on http://localhost:3000'))
+app.listen(3034, '0.0.0.0', () => consola.log('Server is running on http://localhost:3034'))
 
 // // Clear epd screen
 // mqtt.sendBinary(TopicUpFull, new Buffer(0))
