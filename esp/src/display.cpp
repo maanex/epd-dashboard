@@ -80,13 +80,13 @@ void disp_raw_stream_pixels(uint8_t* pixels, const int w, const int h, const int
 void disp_raw_render_full(void) {
   EPD_7IN5_V2_Display(ImageBuffer);
   EPD_7IN5_V2_Sleep();
-  printf("Going to sleep...\r\n");
+  printf("Display going to sleep...\r\n");
 }
 
 void disp_raw_render_part(int x, int y, int w, int h) {
   EPD_7IN5_V2_Display_Part(ImageBuffer, x, y, x + w, y + h);
   EPD_7IN5_V2_Sleep();
-  printf("Going to sleep...\r\n");
+  printf("Display going to sleep...\r\n");
 }
 
 void disp_init_full(void) {

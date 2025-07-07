@@ -17,8 +17,6 @@ Adafruit_BMP085 bmp;
 void setup() {
   Serial.begin(115200);
   Serial.println("Booting...");
-  delay(3000);
-  Serial.println("Now for real!");
 
   disp_init();
   delay(500);
@@ -41,6 +39,7 @@ void setup() {
   }
   Serial.println();
 
+  uint8_t sleepMinutes = 15;
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("WiFi connected.");
     float temp = bmp.readTemperature();
@@ -48,7 +47,7 @@ void setup() {
     Serial.println(temp);
 
     char fullUrl[256];
-    snprintf(fullUrl, sizeof(fullUrl), "http://%s:3000/?temp=%.2f", IMG_URL, temp);
+    snprintf(fullUrl, sizeof(fullUrl), "http://%s:3000/r?temp=%.2f", IMG_URL, temp);
     Serial.print("Requesting image from: ");
     Serial.println(fullUrl);
 
@@ -65,14 +64,25 @@ void setup() {
       Serial.println("Started image streaming...");
 
       int position = 0;
+      bool firstByteRead = false;
       while (http.connected() && stream->available()) {
         uint8_t buffer[128];
         size_t len = stream->readBytes(buffer, sizeof(buffer));
 
-        for (int i = 0; i < len; i++) {
-          disp_raw_stream_pixels(&buffer[i], 800, 480, i + position);
+        size_t start = 0;
+        if (!firstByteRead && len > 0) {
+          sleepMinutes = buffer[0];
+          if (sleepMinutes == 0 || sleepMinutes > 4*60) {
+            sleepMinutes = 15;
+          }
+          firstByteRead = true;
+          start = 1;
+          position = 0;
         }
-        position += len;
+
+        for (size_t i = start; i < len; i++) {
+          disp_raw_stream_pixels(&buffer[i], 800, 480, position++);
+        }
       }
 
       disp_raw_render_full();
@@ -85,11 +95,10 @@ void setup() {
     Serial.println("WiFi connection failed.");
   }
 
-  sleep(500);
   WiFi.disconnect(true);
-  EPD_7IN5_V2_Sleep();
-  Serial.println("Entering deep sleep for 10 minutes...");
-  esp_sleep_enable_timer_wakeup(10 * 60 * 1000000ULL); // 10 min
+  Serial.printf("Entering deep sleep for %u minutes...\n", sleepMinutes);
+  delay(500);
+  esp_sleep_enable_timer_wakeup(sleepMinutes * 60 * 1000000ULL);
   esp_deep_sleep_start();
 }
 

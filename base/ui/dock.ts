@@ -44,7 +44,7 @@ const weatherCodeIcons: Record<number, number[]> = {
 
 const weekdayShort = [ 'SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA' ]
 
-export function drawDock(weather: WeatherApi, holidays: HolidaysApi): Renderer {
+export function drawDock(weather: WeatherApi, holidays: HolidaysApi, localTemperature?: number | string): Renderer {
   return ({ paint, width, height }) => {
     paint.newRect(0, 0, width, height)
       .fill('medium')
@@ -57,6 +57,7 @@ export function drawDock(weather: WeatherApi, holidays: HolidaysApi): Renderer {
     // draw network info
     const data = [ true, true, false ]
     const dataIcons = [ icons.v, icons.m, icons.f ]
+    let leftX = heightMinusPadding * 2
     paint.newRect()
       .from(padding, padding)
       .sized(heightMinusPadding * 2, heightMinusPadding)
@@ -85,6 +86,51 @@ export function drawDock(weather: WeatherApi, holidays: HolidaysApi): Renderer {
           .fill('black', 'invert')
       }
     }
+
+    // Local temperature
+    if (localTemperature) {
+      const boxPadding = 15
+      const rounded = Math.round(typeof localTemperature === 'string' ? parseFloat(localTemperature) : localTemperature)
+      paint.newText(rounded + '°')
+        .at(leftX + padding * 2 + boxPadding, padding + heightMinusPadding / 2)
+        .size(16)
+        .anchor('left', 'center')
+        .useRect(rect => rect.round(3)
+          .inset(-boxPadding, 0)
+          .from(null, padding)
+          .sized(rect.getSize().width + rect.getSize().width%2, heightMinusPadding)
+          .fill('white')
+          .translate(2, 2)
+          .fill('dark')
+          .translate(-2, -2)
+          .fill('black')
+          .inset(1)
+          .fill('white')
+        )
+        .render('black')
+        .useRect(rect => leftX += rect.getSize().width + padding + boxPadding * 2)
+    }
+
+    // Local time (debug!)
+    const boxPadding = 15
+    paint.newText(new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }))
+      .at(leftX + padding * 2 + boxPadding, padding + heightMinusPadding / 2)
+      .size(16)
+      .anchor('left', 'center')
+      .useRect(rect => rect.round(3)
+        .inset(-boxPadding, 0)
+        .from(null, padding)
+          .sized(rect.getSize().width + rect.getSize().width%2, heightMinusPadding)
+        .fill('white')
+        .translate(2, 2)
+        .fill('dark')
+        .translate(-2, -2)
+        .fill('black')
+        .inset(1)
+        .fill('white')
+      )
+      .render('black')
+      .useRect(rect => leftX += rect.getSize().width + padding * 2 + boxPadding * 2)
 
     // draw weather info
     const numDays = 7

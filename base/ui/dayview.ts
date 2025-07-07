@@ -65,6 +65,13 @@ export function drawDayview(weather: WeatherApi): Renderer {
     let x = 0, y = 0, p = 0, g = 0, w = 0
     let leftValue = 0, centerValue = 0, rightValue = 0
     for (let hour = 0; hour < hourCount; hour++) {
+      if (hour !== 0) {
+        paint.newRect()
+          .from(hourWidth * hour, 0)
+          .sized((hour + firstHour) % 6 === 0 ? 2 : 1, height)
+          .fill((hour + firstHour) % 6 === 0 ? 'black' : 'medium', 'darken')
+      }
+
       // Rain
       leftValue = hourly[hour === 0 ? 0 : (hour - 1)].precipitation
       centerValue = hourly[hour].precipitation
@@ -117,13 +124,6 @@ export function drawDayview(weather: WeatherApi): Renderer {
         paint.setPixel(x, y+1, 0)
         paint.setPixel(x, y+2, 1)
         paint.setPixel(x, y+3, 1)
-      }
-
-      if (hour !== 0) {
-        paint.newRect()
-          .from(hourWidth * hour, 0)
-          .sized((hour + firstHour) % 6 === 0 ? 2 : 1, height)
-          .fill((hour + firstHour) % 6 === 0 ? 'black' : 'medium', 'darken')
       }
     }
 

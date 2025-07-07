@@ -9,7 +9,7 @@ type MixMode = 'default' | 'darken' | 'lighten' | 'invert'
 
 
 type RectPaint = {
-  from: (fromX: number, fromY: number) => RectPaint
+  from: (fromX: number | null, fromY: number | null) => RectPaint
   sized: (width: number | null, height: number | null) => RectPaint
   to: (toX: number, toY: number) => RectPaint
   translate: (dx: number, dy: number) => RectPaint
@@ -105,9 +105,9 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     }
 
     const out: RectPaint = {
-      from: (fromX: number, fromY: number) => {
-        rect.x = ~~fromX
-        rect.y = ~~fromY
+      from: (fromX: number | null, fromY: number | null) => {
+        rect.x = fromX === null ? rect.x : ~~fromX
+        rect.y = fromY === null ? rect.y : ~~fromY
         return out
       },
       sized: (width: number | null, height: number | null) => {

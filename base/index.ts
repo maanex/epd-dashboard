@@ -21,15 +21,6 @@ GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Mod
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
 
-// /*
-const mqtt = useMqttStub()
-//*/ const mqtt = useMqtt()
-//*/
-await mqtt.init()
-
-mqtt.subscribeStat(message => {
-  consola.withTag('MQTT').info(message)
-})
 
 consola.start('Loading weather')
 const weather = await useWeatherApi()
@@ -46,7 +37,22 @@ const holidays = await useHolidaysApi()
 consola.success('Holidays loaded')
 
 
-async function drawScreen() {
+function getSleepMinutes() {
+  const drawingStopHour = 2
+  const drawingStartHour = 6
+
+  const now = new Date()
+  const sleepMinutes = (now.getHours() >= drawingStopHour && now.getHours() < drawingStartHour)
+    // minutes until 6am
+    ? (drawingStartHour - now.getHours()) * 60 - now.getMinutes()
+    // minutes until next full hour
+    : (60 - now.getMinutes()) % 60
+
+  // +1 minute so we don't accidentally get it at 10 seconds before next hour and render outdated data
+  return Math.max(15, Math.min(60*4, Math.ceil(sleepMinutes + 1)))
+}
+
+async function drawScreen(localTemperature?: number | string) {
   await weather.assertRecentData()
   await calendar.assertRecentData()
   await holidays.assertRecentData()
@@ -71,14 +77,13 @@ async function drawScreen() {
     drawQuote({
       author: 'maanex',
       text: 'lorem ipsum dolor sittim (which is the opposite of standim)',
-      // image: 'https://media.discordapp.net/attachments/709144084933247096/1357021815268053313/image.png?ex=67fdd9cd&is=67fc884d&hm=58332d14c895eb922c8573e69b774611447e287037c2e746e9e778e2babb0bc5&=&format=webp&quality=lossless&width=1474&height=1428'
       image: 'https://media.tenor.com/K2bnpusQYIMAAAAM/silly-cat.gif'
     }),
     horizontalSplit, dayviewHeight,
     Const.ScreenWidth - horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
   )
   await img.draw(
-    drawDock(weather, holidays),
+    drawDock(weather, holidays, localTemperature),
     0, Const.ScreenHeight - dockHeight,
     Const.ScreenWidth, dockHeight
   )
@@ -86,65 +91,31 @@ async function drawScreen() {
   return img
 }
 
-// let lastRendered: Buffer | null = null
-// let lastChange = 0
-// async function drawAndUpdate(forceFullUpdate: boolean) {
-//   if (Date.now() - lastChange < 5000)
-//     return
-
-//   lastChange = Date.now()
-//   const img = await drawScreen()
-//   const rendered = img.renderFullBw()
-//   consola.info(`Frame rendered in ${Date.now() - lastChange}ms`)
-//   await img.exportFullBw('test.png')
-
-//   if (!lastRendered || forceFullUpdate) {
-//     mqtt.sendBinary(TopicUpFull, rendered)
-//     lastRendered = rendered
-//     return
-//   }
-
-//   console.log('Partial update maybe')
-//   if (ImgDiff.areIdentical(lastRendered, rendered))
-//     return
-
-//   const diff = ImgDiff.xor(lastRendered, rendered)
-//   await ImgDebug.renderBits(diff, Const.ScreenWidth, Const.ScreenHeight)
-//   const bounds = ImgDiff.getBounds(diff, Const.ScreenWidth, Const.ScreenHeight)
-//   console.log('Partial update', bounds, bounds.w * bounds.h, Const.MaxPixelsForPartialUpdate)
-//   if (bounds.w * bounds.h > Const.MaxPixelsForPartialUpdate) {
-//     mqtt.sendBinary(TopicUpFull, rendered)
-//     lastRendered = rendered
-//     return
-//   }
-
-//   const buff = Buffer.alloc(8 + Math.ceil(bounds.w * bounds.h / 8))
-//   buff.writeUInt16BE(bounds.x, 0)
-//   buff.writeUInt16BE(bounds.y, 2)
-//   buff.writeUInt16BE(bounds.w, 4)
-//   buff.writeUInt16BE(bounds.h, 6)
-//   ImgDiff.copyBounds(diff, buff, 8, bounds, Const.ScreenWidth)
-//   mqtt.sendBinary(TopicUpPart, buff)
-// }
-
-// async function run() {
-//   consola.log('First')
-//   await drawAndUpdate(false)
-//   await new Promise(resolve => setTimeout(resolve, 7000))
-//   console.log('Second')
-//   await drawAndUpdate(false)
-// }
-// run()
-
 const app = express()
-app.get('/', async (req, res) => {
+app.get('/r', async (req, res) => {
   consola.info(`Request from ${req.ip} with ${Object.keys(req.query)}`)
+
+  const localTemperature = req.query.temp ? String(req.query.temp) : undefined
   const start = Date.now()
-  const img = await drawScreen()
-  const buffer = await img.renderFullBw()
+  const img = await drawScreen(localTemperature)
+  const imgBuffer = await img.renderFullBw()
   consola.info(`Completed in ${Date.now() - start}ms`)
+
+  const sleepBuffer = Buffer.from([ getSleepMinutes() ])
+  res.send(Buffer.concat([ sleepBuffer, imgBuffer ]))
+})
+app.get('/', async (req, res) => {
+  consola.info(`View from ${req.ip} with ${Object.keys(req.query)}`)
+
+  const localTemperature = req.query.temp ? String(req.query.temp) : undefined
+  const start = Date.now()
+  const img = await drawScreen(localTemperature)
+  const imgBuffer = await img.exportFullBw()
+  consola.info(`Completed in ${Date.now() - start}ms`)
+
+  consola.info(`Sleep timer set to ${getSleepMinutes()}min`)
   res.setHeader('Content-Type', 'image/png')
-  res.send(buffer)
+  res.send(imgBuffer)
 })
 app.listen(3000, '0.0.0.0', () => consola.log('Server is running on http://localhost:3000'))
 
