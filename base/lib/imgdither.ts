@@ -1,6 +1,8 @@
 import axios from "axios"
 import sharp from "sharp"
 import type { usePaint } from "./paint"
+import path from "path"
+import * as fs from 'fs/promises'
 
 
 const bayerMatrix = [
@@ -28,12 +30,22 @@ export function orderedDither(imageData: Buffer, width: number, height: number) 
 }
 
 export async function loadAndDitherImage(url: string, maxWidth: number, maxHeight: number) {
-  const res = await axios({
-    method: 'get',
-    url,
-    responseType: 'arraybuffer'
-  })
-  const data = res.data as Buffer
+  let data: Buffer
+  if (!url.startsWith('http')) {
+    // local file
+    data = await fs.readFile(
+      path.join(import.meta.dirname, '..', '..', 'credentials', 'cache', url)
+    )
+  } else {
+    // remote file
+    const res = await axios({
+      method: 'get',
+      url,
+      responseType: 'arraybuffer'
+    })
+    data = res.data as Buffer
+  }
+
   const meta = await sharp(data).metadata()
   const xAdjust = maxWidth / meta.width!
   const yAdjust = maxHeight / meta.height!

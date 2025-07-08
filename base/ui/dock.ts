@@ -111,27 +111,6 @@ export function drawDock(weather: WeatherApi, holidays: HolidaysApi, localTemper
         .useRect(rect => leftX += rect.getSize().width + padding + boxPadding * 2)
     }
 
-    // Local time (debug!)
-    const boxPadding = 15
-    paint.newText(new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }))
-      .at(leftX + padding * 2 + boxPadding, padding + heightMinusPadding / 2)
-      .size(16)
-      .anchor('left', 'center')
-      .useRect(rect => rect.round(3)
-        .inset(-boxPadding, 0)
-        .from(null, padding)
-          .sized(rect.getSize().width + rect.getSize().width%2, heightMinusPadding)
-        .fill('white')
-        .translate(2, 2)
-        .fill('dark')
-        .translate(-2, -2)
-        .fill('black')
-        .inset(1)
-        .fill('white')
-      )
-      .render('black')
-      .useRect(rect => leftX += rect.getSize().width + padding * 2 + boxPadding * 2)
-
     // draw weather info
     const numDays = 7
     const dayWidth = heightMinusPadding

@@ -1,4 +1,6 @@
 import express from "express"
+import os from 'node:os'
+import * as fs from 'fs/promises'
 import { useWeatherApi } from "./api/weather"
 import { useImage } from "./lib/image"
 import { drawDayview } from "./ui/dayview"
@@ -35,6 +37,10 @@ consola.start('Loading holidays')
 const holidays = await useHolidaysApi()
 consola.success('Holidays loaded')
 
+consola.start('Starting Discord bot')
+const disco = await runDiscordBot()
+consola.success('Discord bot started')
+
 
 function getSleepMinutes() {
   const drawingStopHour = 2
@@ -62,6 +68,12 @@ async function drawScreen(localTemperature?: number | string) {
   const dockHeight = 60
   const horizontalSplit = 250
 
+  const totd = await fs.readFile(
+    path.join(import.meta.dirname, '..', 'credentials', 'totd.json'),
+    'utf-8'
+  ).catch(() => null)
+  const totdData = await Promise.try(() => JSON.parse(totd ?? '')).catch(() => null)
+
   await img.draw(
     drawDayview(weather),
     0, 0,
@@ -72,15 +84,15 @@ async function drawScreen(localTemperature?: number | string) {
     0, dayviewHeight,
     horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
   )
-  await img.draw(
-    drawQuote({
-      author: 'maanex',
-      text: 'lorem ipsum dolor sittim (which is the opposite of standim)',
-      image: 'https://media.tenor.com/K2bnpusQYIMAAAAM/silly-cat.gif'
-    }),
-    horizontalSplit, dayviewHeight,
-    Const.ScreenWidth - horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
-  )
+
+  if (totdData) {
+    await img.draw(
+      drawQuote(totdData),
+      horizontalSplit, dayviewHeight,
+      Const.ScreenWidth - horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
+    )
+  }
+
   await img.draw(
     drawDock(weather, holidays, localTemperature),
     0, Const.ScreenHeight - dockHeight,
@@ -94,7 +106,7 @@ const app = express()
 app.get('/r', async (req, res) => {
   const log = `Request from ${req.ip} with ${Object.keys(req.query)}`
   consola.info(log)
-  axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log })
+  axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log, username: os.hostname() })
 
   const localTemperature = req.query.temp ? String(req.query.temp) : undefined
   const start = Date.now()
@@ -108,7 +120,7 @@ app.get('/r', async (req, res) => {
 app.get('/', async (req, res) => {
   const log = `View from ${req.ip} with ${Object.keys(req.query)}`
   consola.info(log)
-  axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log })
+  axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log, username: os.hostname() })
 
   const localTemperature = req.query.temp ? String(req.query.temp) : undefined
   const start = Date.now()
@@ -120,9 +132,5 @@ app.get('/', async (req, res) => {
   res.setHeader('Content-Type', 'image/png')
   res.send(imgBuffer)
 })
+app.get('/discord-manual', () => disco.badaboom())
 app.listen(3034, '0.0.0.0', () => consola.log('Server is running on http://localhost:3034'))
-
-// // Clear epd screen
-// mqtt.sendBinary(TopicUpFull, new Buffer(0))
-
-// const server = runDiscordBot()
