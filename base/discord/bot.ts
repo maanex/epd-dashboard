@@ -124,7 +124,7 @@ export async function runDiscordBot() {
           return channel ? `#${channel.name}` : `<#${id}>`
         })
     } else {
-      downloadImage(image?.url, `${message.id}.png`)
+      downloadImage(image?.proxyURL ?? image?.url, `${message.id}.png`)
     }
 
     const img = useImage(800 - 250, 480 - 160)
