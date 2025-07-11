@@ -140,7 +140,7 @@ async function createGapiClient() {
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
 
     oAuth2Client.on('tokens', async (tokens) => {
-      console.log(tokens)
+      consola.withTag('gCalendar').info('Saving new tokens')
       const currentRaw = await fs.readFile(TOKEN_PATH, 'utf8')
       const currentJson = JSON.parse(currentRaw)
       for (const key in tokens)
@@ -186,7 +186,7 @@ export const useGCalendarApi = async (filter?: Filter) => {
     data = await fetch(client, filter)
     dataTime = Date.now()
   }
-  
+
   async function assertRecentData() {
     if (Date.now() - dataTime > 1000 * 60 * 30) // 30 minutes
       await refresh()
