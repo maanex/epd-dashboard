@@ -53,7 +53,7 @@ export const useHolidaysApi = async () => {
   }
 
   return {
-    data,
+    getData: () => data,
     isHolidayInXDays,
     refresh,
     assertRecentData

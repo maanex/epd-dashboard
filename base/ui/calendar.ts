@@ -6,8 +6,9 @@ import type { Renderer } from "../lib/image"
 const defaultTaskListName = 'Meine Aufgaben'
 
 
-export function drawCalendarAgenda(calendar: GCalendarApi): Renderer {
+export function drawCalendarAgenda(calendarApi: GCalendarApi): Renderer {
   return ({ paint, width, height }) => {
+    const calendar = calendarApi.getData()
     const padding = 15
     const maxWidth = width - padding * 2
 

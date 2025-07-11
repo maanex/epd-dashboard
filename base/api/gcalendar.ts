@@ -2,6 +2,7 @@ import { google } from 'googleapis'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import consola from 'consola'
+import type { OAuth2Client } from 'google-auth-library'
 
 const CREDENTIALS_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'client_secret.json')
 const TOKEN_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'token.json')
@@ -11,55 +12,13 @@ const SCOPES = [
   'https://www.googleapis.com/auth/tasks.readonly'
 ]
 
-async function authorize() {
-  try {
-    const content = await fs.readFile(CREDENTIALS_PATH, 'utf8')
-    const credentials = JSON.parse(content)
-    const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web
-    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
-
-    try {
-      const token = await fs.readFile(TOKEN_PATH, 'utf8')
-      oAuth2Client.setCredentials(JSON.parse(token))
-      return oAuth2Client
-    } catch (err: any) {
-      return getNewToken(oAuth2Client)
-    }
-  } catch (err: any) {
-    consola.error('Error loading client secret file:', err)
-    throw err
-  }
-}
-
-async function getNewToken(oAuth2Client: any) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  })
-  consola.warn('Google API Credentials not found. Please sign in.')
-  consola.log(authUrl)
-
-  const code = await consola.prompt('Enter the code from that page here: ')
-
-  try {
-    const tokenResponse = await oAuth2Client.getToken(code)
-    oAuth2Client.setCredentials(tokenResponse.tokens)
-    await fs.writeFile(TOKEN_PATH, JSON.stringify(tokenResponse.tokens))
-    consola.success('Token stored to', TOKEN_PATH)
-    return oAuth2Client
-  } catch (err: any) {
-    consola.error('Error retrieving access token', err)
-    throw err
-  }
-}
-
 async function listCalendars(auth: any) {
   const calendar = google.calendar({ version: 'v3', auth })
   const res = await calendar.calendarList.list()
   return res.data.items ?? []
 }
 
-async function  listTasks(auth: any) {
+async function listTasks(auth: any) {
   const tasks = google.tasks({ version: 'v1', auth })
   const res = await tasks.tasklists.list()
   if (!res.data.items?.length)
@@ -99,6 +58,7 @@ async function listUpcomingEvents(auth: any, calendarId: string) {
     singleEvents: true,
     orderBy: 'startTime',
   })
+
   return res.data.items ?? []
 }
 
@@ -107,8 +67,8 @@ type Filter = {
   blacklist?: Array<RegExp | string>
 }
 
-async function fetch(filter?: Filter) {
-  const authClient = await authorize()
+async function fetch(authClient: OAuth2Client, filter?: Filter) {
+  consola.withTag('gCalendar').info('Fetching calendar data')
   let calendars = await listCalendars(authClient)
 
   if (filter?.whitelist) {
@@ -172,12 +132,58 @@ async function fetch(filter?: Filter) {
   }
 }
 
+async function createGapiClient() {
+  try {
+    const content = await fs.readFile(CREDENTIALS_PATH, 'utf8')
+    const credentials = JSON.parse(content)
+    const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
+
+    oAuth2Client.on('tokens', async (tokens) => {
+      console.log(tokens)
+      const currentRaw = await fs.readFile(TOKEN_PATH, 'utf8')
+      const currentJson = JSON.parse(currentRaw)
+      for (const key in tokens)
+        currentJson[key] = tokens[key as keyof typeof tokens]
+      await fs.writeFile(TOKEN_PATH, JSON.stringify(currentJson))
+    })
+
+    try {
+      const token = await fs.readFile(TOKEN_PATH, 'utf8')
+      oAuth2Client.setCredentials(JSON.parse(token))
+      return oAuth2Client
+    } catch (err: any) {
+      const authUrl = oAuth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: SCOPES,
+      })
+      consola.warn('Google API Credentials not found. Please sign in.')
+      consola.log(authUrl)
+
+      const code = await consola.prompt('Enter the code from that page here: ')
+
+      try {
+        const tokenResponse = await oAuth2Client.getToken(String(code))
+        oAuth2Client.setCredentials(tokenResponse.tokens)
+        return oAuth2Client
+      } catch (err: any) {
+        consola.error('Error retrieving access token', err)
+        throw err
+      }
+    }
+  } catch (err: any) {
+    consola.error('Error loading client secret file:', err)
+    throw err
+  }
+}
+
 export const useGCalendarApi = async (filter?: Filter) => {
-  let data = await fetch(filter)
+  const client = await createGapiClient()
+  let data = await fetch(client, filter)
   let dataTime = Date.now()
 
   async function refresh() {
-    data = await fetch(filter)
+    data = await fetch(client, filter)
     dataTime = Date.now()
   }
   
@@ -187,7 +193,7 @@ export const useGCalendarApi = async (filter?: Filter) => {
   }
 
   return {
-    ...data,
+    getData: () => data,
     refresh,
     assertRecentData
   }
