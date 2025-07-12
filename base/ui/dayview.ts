@@ -8,13 +8,21 @@ const firstHour = 6
 const lastHour = 26
 
 function getDarkness(value: number): FillStyle {
-  if (value < 20) return 'white'
-  if (value < 40) return 'lightest'
-  if (value < 60) return 'lighter'
-  if (value < 80) return 'light'
-  if (value < 95) return 'medium'
-  if (value < 98) return 'dark'
+  if (value < 15) return 'white'
+  if (value < 30) return 'lightest'
+  if (value < 50) return 'lighter'
+  if (value < 75) return 'light'
+  if (value < 85) return 'medium'
+  if (value < 93) return 'dark'
   return 'black'
+}
+
+function blendValues(numA: number, numB: number, weight: number): number {
+  if (numA === undefined)
+    return numB
+  if (numB === undefined)
+    return numA
+  return numA * (1 - weight) + numB * weight
 }
 
 export function drawDayview(weather: WeatherApi): Renderer {
@@ -29,7 +37,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
     const temperatureDelta = temperatureMax - temperatureMin
 
     const hourWidth = width / hourCount
-    const cloudCoverHeight = ~~(height * 0.12)
+    const cloudCoverHeight = ~~(height * 0.18)
 
     const sunriseRelative = today.sunrise.getHours() - firstHour
     const sunsetRelative = today.sunset.getHours() - firstHour
@@ -68,20 +76,21 @@ export function drawDayview(weather: WeatherApi): Renderer {
       }
 
       // cloud coverage
-      for (let quarter = 0; quarter < 4; quarter++) {
-        const x = hourWidth * hour + (quarter * hourWidth / 4)
-        const add = (quarter === 0 && hourly[hour-1])
-          ? (hourly[hour - 1].cloudCover)
-          : (quarter === 3 && hourly[hour + 1])
-            ? (hourly[hour + 1].cloudCover)
-            : (hourly[hour].cloudCover)
-        const value = (hourly[hour].cloudCover + add) / 2
+      for (let part = 0; part < 5; part++) {
+        const x = hourWidth * hour + (part * hourWidth / 5)
+        const value = (part === 2) ? hourly[hour].cloudCover
+          : (part === 0) ? blendValues(hourly[hour-1]?.cloudCover, hourly[hour].cloudCover, 1/3)
+          : (part === 1) ? blendValues(hourly[hour-1]?.cloudCover, hourly[hour].cloudCover, 2/3)
+          : (part === 3) ? blendValues(hourly[hour].cloudCover, hourly[hour+1]?.cloudCover, 1/3)
+          : (part === 4) ? blendValues(hourly[hour].cloudCover, hourly[hour+1]?.cloudCover, 2/3)
+          : 0
 
         for (let yi = 0; yi < cloudCoverHeight; yi += 1) {
+          const falloff = Math.sqrt((cloudCoverHeight - yi) / cloudCoverHeight)
           paint.newRect()
             .from(x, yi)
-            .sized(hourWidth / 4, 1)
-            .fill(getDarkness(value * Math.sqrt((cloudCoverHeight - yi) / cloudCoverHeight)), 'darken')
+            .sized(hourWidth / 5, 1)
+            .fill(getDarkness(value * falloff), 'darken')
         }
       }
     }
