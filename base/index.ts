@@ -29,6 +29,7 @@ consola.success('Weather loaded')
 
 consola.start('Loading gCalendar')
 const calendar = await useGCalendarApi({
+  // dummy: true,
   blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
 })
 consola.success('gCalendar loaded')
@@ -104,7 +105,7 @@ async function drawScreen(localTemperature?: number | string) {
 
 const app = express()
 app.get('/r', async (req, res) => {
-  const log = `Request from ${req.ip} with ${Object.entries(req.query).map(([k, v]) => `${k}=${v}`).join(', ')} - ${getSleepMinutes}min sleep`
+  const log = `Request from ${req.ip} with ${Object.entries(req.query).map(([k, v]) => `${k}=${v}`).join(', ')} - ${getSleepMinutes()}min sleep`
   consola.info(log)
   axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log, username: os.hostname() })
 
@@ -118,7 +119,7 @@ app.get('/r', async (req, res) => {
   res.send(Buffer.concat([ sleepBuffer, imgBuffer ]))
 })
 app.get('/', async (req, res) => {
-  const log = `View from ${req.ip} with ${Object.entries(req.query).map(([k, v]) => `${k}=${v}`).join(', ')} - ${getSleepMinutes}min sleep`
+  const log = `View from ${req.ip} with ${Object.entries(req.query).map(([k, v]) => `${k}=${v}`).join(', ')} - ${getSleepMinutes()}min sleep`
   consola.info(log)
   axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log, username: os.hostname() })
 

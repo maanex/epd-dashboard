@@ -8,9 +8,10 @@ type Hourly = {
   precipitationProbability: number
   precipitation: number
   weatherCode: number
+  cloudCover: number
 }
 
-const url = 'https://api.open-meteo.com/v1/forecast?latitude=49.591&longitude=11.0078&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,sunshine_duration,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours&timezone=Europe%2FBerlin'
+const url = 'https://api.open-meteo.com/v1/forecast?latitude=49.579&longitude=11.018&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,cloud_cover&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,sunshine_duration,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours&timezone=Europe%2FBerlin'
 
 export const useWeatherApi = async () => {
   const fetchWeather = async () => {
@@ -77,7 +78,8 @@ export const useWeatherApi = async () => {
         humidity: data.hourly.relative_humidity_2m[i],
         precipitationProbability: data.hourly.precipitation_probability[i],
         precipitation: data.hourly.precipitation[i],
-        weatherCode: data.hourly.weather_code[i]
+        weatherCode: data.hourly.weather_code[i],
+        cloudCover: data.hourly.cloud_cover[i]
       }
     }
 

@@ -1,10 +1,21 @@
 import type { WeatherApi } from "../api/weather"
 import { Easings } from "../lib/easings"
 import type { Renderer } from "../lib/image"
+import type { FillStyle } from "../lib/paint"
 
 
 const firstHour = 6
 const lastHour = 26
+
+function getDarkness(value: number): FillStyle {
+  if (value < 20) return 'white'
+  if (value < 40) return 'lightest'
+  if (value < 60) return 'lighter'
+  if (value < 80) return 'light'
+  if (value < 95) return 'medium'
+  if (value < 98) return 'dark'
+  return 'black'
+}
 
 export function drawDayview(weather: WeatherApi): Renderer {
   return ({ paint, width, height }) => {
@@ -18,6 +29,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
     const temperatureDelta = temperatureMax - temperatureMin
 
     const hourWidth = width / hourCount
+    const cloudCoverHeight = ~~(height * 0.12)
 
     const sunriseRelative = today.sunrise.getHours() - firstHour
     const sunsetRelative = today.sunset.getHours() - firstHour
@@ -54,11 +66,29 @@ export function drawDayview(weather: WeatherApi): Renderer {
           .sized(hourWidth - part, height)
           .fill('lighter')
       }
+
+      // cloud coverage
+      for (let quarter = 0; quarter < 4; quarter++) {
+        const x = hourWidth * hour + (quarter * hourWidth / 4)
+        const add = (quarter === 0 && hourly[hour-1])
+          ? (hourly[hour - 1].cloudCover)
+          : (quarter === 3 && hourly[hour + 1])
+            ? (hourly[hour + 1].cloudCover)
+            : (hourly[hour].cloudCover)
+        const value = (hourly[hour].cloudCover + add) / 2
+
+        for (let yi = 0; yi < cloudCoverHeight; yi += 1) {
+          paint.newRect()
+            .from(x, yi)
+            .sized(hourWidth / 4, 1)
+            .fill(getDarkness(value * Math.sqrt((cloudCoverHeight - yi) / cloudCoverHeight)), 'darken')
+        }
+      }
     }
 
     const tempUpper = ~~(height * 0.1)
     const tempLower = ~~(height - height * 0.2)
-    const rainHeight = ~~(height * 0.2)
+    const rainHeight = ~~(height * 0.8)
     const tempVar = tempLower - tempUpper
     const hourWidthHalf = hourWidth/2
 
@@ -73,15 +103,15 @@ export function drawDayview(weather: WeatherApi): Renderer {
       }
 
       // Rain
-      leftValue = hourly[hour === 0 ? 0 : (hour - 1)].precipitation
-      centerValue = hourly[hour].precipitation
-      rightValue = hourly[hour === (hourCount - 1) ? (hourCount - 1) : (hour + 1)].precipitation
+      leftValue = hourly[hour === 0 ? 0 : (hour - 1)].precipitationProbability
+      centerValue = hourly[hour].precipitationProbability
+      rightValue = hourly[hour === (hourCount - 1) ? (hourCount - 1) : (hour + 1)].precipitationProbability
       for (let xi = 0; xi < hourWidthHalf; xi++) {
         x = xi + hourWidth * hour
         p = xi / hourWidthHalf
         g = (leftValue + centerValue) / 2
         w = g + Easings.easeOutQuad(p) * (centerValue - g)
-        y = height - rainHeight * w
+        y = height - rainHeight * w / 100
         for (let yi = y; yi < height; yi++)
           paint.setPixel(x, yi, 0)
       }
@@ -90,7 +120,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
         p = (xi - hourWidthHalf) / hourWidthHalf
         g = (centerValue + rightValue) / 2
         w = centerValue + Easings.easeInQuad(p) * (g - centerValue)
-        y = height - rainHeight * w
+        y = height - rainHeight * w / 100
         for (let yi = y; yi < height; yi++)
           paint.setPixel(x, yi, 0)
       }

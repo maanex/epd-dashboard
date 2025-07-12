@@ -65,6 +65,7 @@ async function listUpcomingEvents(auth: any, calendarId: string) {
 type Filter = {
   whitelist?: Array<RegExp | string>
   blacklist?: Array<RegExp | string>
+  dummy?: boolean
 }
 
 async function fetch(authClient: OAuth2Client, filter?: Filter) {
@@ -178,6 +179,18 @@ async function createGapiClient() {
 }
 
 export const useGCalendarApi = async (filter?: Filter) => {
+  if (filter?.dummy) {
+    consola.withTag('gCalendar').info('Using dummy data for GCalendar API')
+    return {
+      getData: () => ({
+        events: [],
+        tasks: []
+      }),
+      refresh: async () => {},
+      assertRecentData: async () => {}
+    }
+  }
+
   const client = await createGapiClient()
   let data = await fetch(client, filter)
   let dataTime = Date.now()

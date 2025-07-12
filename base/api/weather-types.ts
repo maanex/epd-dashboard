@@ -14,6 +14,7 @@ export type WeatherData = {
     precipitation_probability: string
     precipitation: string
     weather_code: string
+    cloud_cover: string
   }
   hourly: {
     time: string[]
@@ -22,6 +23,7 @@ export type WeatherData = {
     precipitation_probability: number[]
     precipitation: number[]
     weather_code: number[]
+    cloud_cover: number[]
   }
   daily_units: {
     time: string

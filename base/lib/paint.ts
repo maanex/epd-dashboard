@@ -3,8 +3,8 @@ import { TextUtils } from "./text-utils"
 import { cFont } from "./c-font"
 
 
-type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black'
-type MixMode = 'default' | 'darken' | 'lighten' | 'invert'
+export type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black'
+export type MixMode = 'default' | 'darken' | 'lighten' | 'invert'
 
 
 type RectPaint = {
