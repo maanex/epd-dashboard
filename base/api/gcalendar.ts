@@ -104,6 +104,7 @@ async function fetch(authClient: OAuth2Client, filter?: Filter) {
       const multiDayCount = isMultiDay ? Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) : -1
       const multiDayCurrent = isMultiDay ? Math.floor((new Date().getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) : -1
       const isToday = start.getTime() <= endOfToday.getTime() && end.getTime() >= startOfToday.getTime()
+      const isUpcoming = start.getTime() > endOfToday.getTime()
 
       return {
         ...event,
@@ -115,6 +116,7 @@ async function fetch(authClient: OAuth2Client, filter?: Filter) {
         isMultiDay,
         multiDayCount,
         multiDayCurrent,
+        isUpcoming,
         summary: event.summary || '(no title)',
         calendar
       }
