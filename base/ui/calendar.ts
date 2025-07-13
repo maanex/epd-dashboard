@@ -120,11 +120,15 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
     return
 
   y += padding - 10
-  paint
-    .newRect(padding, y, maxWidth, 1)
-    .inset(0.5)
-    .fill('medium')
-  y += padding
+  if (y < height / 2 + padding) {
+    y = height / 2 + padding
+  } else {
+    paint
+      .newRect(padding, y, maxWidth, 1)
+      .inset(0.5)
+      .fill('medium')
+    y += padding
+  }
 
   paint
     .newRect(padding - 1, y - 4, 25, height)
