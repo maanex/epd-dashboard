@@ -127,7 +127,7 @@ export async function runDiscordBot() {
       downloadImage(image?.proxyURL ?? image?.url, `${message.id}.png`)
     }
 
-    const img = useImage(800 - 250, 480 - 160)
+    const img = useImage(800 - 400, 480 - 160)
     await img.draw(
       drawQuote({
         author: message.author.displayName,
@@ -219,7 +219,7 @@ export async function runDiscordBot() {
 
     fs.writeFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'totd.json'), JSON.stringify(winner)).catch(console.error)
 
-    const img = useImage(800 - 250, 480 - 160)
+    const img = useImage(800 - 400, 480 - 160)
     await img.draw(
       drawQuote(winner),
       0, 0,
