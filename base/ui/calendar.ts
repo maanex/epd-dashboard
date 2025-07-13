@@ -120,7 +120,7 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
     return
 
   y += padding - 10
-  if (y < height / 2 + padding) {
+  if (y < height / 2 - padding) {
     y = height / 2 + padding
   } else {
     paint
