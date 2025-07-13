@@ -169,16 +169,18 @@ export function drawDayview(weather: WeatherApi): Renderer {
     const currentHour = new Date().getHours()
     const currentX = hourWidth * (currentHour - firstHour) + hourWidth / 2
     if (currentX >= 0 && currentX < width) {
-      const size = 12
+      const size = 14
       const y = tempLower - tempVar * (hourly[currentHour - firstHour].temperature - temperatureMin) / temperatureDelta - size/2 + 1
       paint.newRect()
         .from(currentX - size/2, y)
         .sized(size, size)
-        .round(-4)
+        .round(-3)
         .inset(-2)
         .fill('white')
         .inset(2)
         .fill('black')
+        .inset(2)
+        .fill('dark')
     }
 
     const warmestHour = hourly.reduce((a, b) => a.temperature > b.temperature ? a : b)

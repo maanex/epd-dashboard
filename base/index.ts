@@ -67,7 +67,7 @@ async function drawScreen(localTemperature?: number | string) {
 
   const dayviewHeight = 100
   const dockHeight = 60
-  const horizontalSplit = 250
+  const horizontalSplit = 400
 
   const totd = await fs.readFile(
     path.join(import.meta.dirname, '..', 'credentials', 'totd.json'),
