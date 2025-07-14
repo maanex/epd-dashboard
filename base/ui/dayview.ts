@@ -1,5 +1,6 @@
 import type { WeatherApi } from "../api/weather"
 import { Easings } from "../lib/easings"
+import { icons } from "../lib/icons"
 import type { Renderer } from "../lib/image"
 import type { FillStyle } from "../lib/paint"
 
@@ -132,6 +133,13 @@ export function drawDayview(weather: WeatherApi): Renderer {
         y = height - rainHeight * w / 100
         for (let yi = y; yi < height; yi++)
           paint.setPixel(x, yi, 0)
+      }
+
+      if (hourly[hour].weatherCode >= 90 && hourly[hour].weatherCode < 100) {
+        paint.newIcon(icons.lightning)
+          .at(hourWidth * hour + hourWidth / 2, height * 0.8)
+          .anchor('center', 'center')
+          .fill('black', 'invert')
       }
 
       // Temperature

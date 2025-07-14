@@ -2,7 +2,6 @@ import type { HolidaysApi } from "../api/holidays"
 import type { WeatherApi } from "../api/weather"
 import { icons } from "../lib/icons"
 import type { Renderer } from "../lib/image"
-import type { usePaint } from "../lib/paint"
 
 
 const weatherCodeIcons: Record<number, number[]> = {
