@@ -192,25 +192,25 @@ export function drawDayview(weather: WeatherApi): Renderer {
       .at(warmestHourIdx * hourWidth + hourWidth / 2, tempUpper + 10)
       .anchor('center', 'top')
       .size(12)
-      .threshold(0.9)
+      .threshold(1)
       .useRect(r => r
         .inset(-2)
         .round(4)
-        .fill('white')
+        .fill((height - warmestHour.precipitationProbability / 100 * rainHeight) > (r.getSize().y + r.getSize().height/2) ? 'white' : 'black')
       )
-      .render('black')
+      .render('black', 'invert')
     paint
       .newText(Math.round(coldestHour.temperature) + '°')
       .at(coldestHourIdx * hourWidth + hourWidth / 2, tempLower - 10)
       .anchor('center', 'bottom')
       .size(12)
-      .threshold(0.9)
+      .threshold(1)
       .useRect(r => r
         .inset(-2)
         .round(4)
-        .fill('white')
+        .fill((height - coldestHour.precipitationProbability / 100 * rainHeight) > (r.getSize().y + r.getSize().height/2) ? 'white' : 'black')
       )
-      .render('black')
+      .render('black', 'invert')
 
     for (let h6block = Math.floor(firstHour / 6); h6block <= Math.floor(lastHour / 6); h6block++) {
       if (warmestHour.hour >= h6block * 6 && warmestHour.hour < (h6block + 1) * 6) continue
@@ -230,13 +230,13 @@ export function drawDayview(weather: WeatherApi): Renderer {
         .at(hourIdx * hourWidth + hourWidth / 2, y + yOff)
         .anchor('center', 'center')
         .size(12)
-        .threshold(0.65)
+        .threshold(0.70)
         .useRect(r => r
           .inset(-2)
           .round(4)
-          .fill('white')
+          .fill((height - hour.precipitationProbability / 100 * rainHeight) > (r.getSize().y + r.getSize().height/2) ? 'white' : 'black')
         )
-        .render('black')
+        .render('black', 'invert')
     }
 
     paint.newRect(0, height-2, width, 2)

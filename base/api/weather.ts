@@ -31,6 +31,8 @@ export const useWeatherApi = async () => {
   async function assertRecentData() {
     if (new Date().getHours() <= 2)
       return // we don't refresh weather data at midnight - 2am so the screen still shows yesterday :3
+    if (new Date().getHours() >= 23 && new Date().getMinutes() >= 45)
+      return // we don't refresh weather data at 11:45pm - midnight either
     if (Date.now() - dataTime > 1000 * 60 * 10) // 10 minutes
       await refresh()
   }
