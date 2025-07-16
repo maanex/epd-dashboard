@@ -165,7 +165,7 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       lastX = width
     } else {
       x += lastX
-      y -= 6
+      y -= 11
     }
 
     const textEvent = paint.newBitText(event.summary)
@@ -176,7 +176,7 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       .useRect(r => r.fill('white'))
       .render('black')
 
-    y += textEvent.toRect().getSize().height + 10
+    y += textEvent.toRect().getSize().height + 15
   }
 }
 

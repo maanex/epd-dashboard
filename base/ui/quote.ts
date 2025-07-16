@@ -8,11 +8,12 @@ type QuoteContent = {
   image?: string
 }
 
+const padding = 15
+const authorHeight = 18
+
 export function drawQuote(content: QuoteContent): Renderer {
   return async ({ paint, width, height }) => {
-    const padding = 15
     const maxWidth = width - padding * 2
-    const authorHeight = 28
 
     paint.newRect(0, 0, width, height)
       .fill('white')
@@ -44,7 +45,7 @@ export function drawQuote(content: QuoteContent): Renderer {
 
     paint.newTriangle()
       .at(width - padding * 4, height - padding - authorHeight + 3)
-      .size(10)
+      .size(6)
       .stretch(1.8)
       .rotate(180)
       .translate(3, 3)
@@ -57,7 +58,7 @@ export function drawQuote(content: QuoteContent): Renderer {
     innerRect.fill('white')
 
     paint.newBitText(content.author)
-      .at(width - padding * 4, height - padding + 5)
+      .at(width - padding * 4, height - padding + 9)
       .anchor('center', 'bottom')
       .size(12)
       .render('black')
@@ -78,4 +79,11 @@ export function drawQuote(content: QuoteContent): Renderer {
         .render('black')
     }
   }
+}
+
+export async function calcQuoteContentWidth(content: QuoteContent, maxWidth: number, height: number) {
+  if (!content.image)
+    return maxWidth
+  const { width } = await loadAndDitherImage(content.image, maxWidth - 3, height - padding*2 - authorHeight - 3)
+  return width + padding * 2
 }

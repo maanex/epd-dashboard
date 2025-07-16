@@ -7,7 +7,7 @@ import { drawDayview } from "./ui/dayview"
 import { GlobalFonts } from '@napi-rs/canvas'
 import * as path from 'path'
 import { Const } from "./lib/const"
-import { drawQuote } from "./ui/quote"
+import { calcQuoteContentWidth, drawQuote } from "./ui/quote"
 import { drawDock } from "./ui/dock"
 import { useGCalendarApi } from "./api/gcalendar"
 import { drawCalendarAgenda } from "./ui/calendar"
@@ -67,7 +67,8 @@ async function drawScreen(localTemperature?: number | string) {
 
   const dayviewHeight = 100
   const dockHeight = 60
-  const horizontalSplit = 400
+  const maxHorizontalSplit = 400
+  let horizontalSplit = maxHorizontalSplit
 
   const totd = await fs.readFile(
     path.join(import.meta.dirname, '..', 'credentials', 'totd.json'),
@@ -80,19 +81,25 @@ async function drawScreen(localTemperature?: number | string) {
     0, 0,
     Const.ScreenWidth, dayviewHeight
   )
+
+  if (totdData) {
+    await img.draw(
+      drawQuote(totdData),
+      maxHorizontalSplit, dayviewHeight,
+      Const.ScreenWidth - maxHorizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
+    )
+    horizontalSplit = Const.ScreenWidth - await calcQuoteContentWidth(
+      totdData,
+      Const.ScreenWidth - maxHorizontalSplit,
+      Const.ScreenHeight - dayviewHeight - dockHeight
+    )
+  }
+
   img.draw(
     drawCalendarAgenda(calendar),
     0, dayviewHeight,
     horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
   )
-
-  if (totdData) {
-    await img.draw(
-      drawQuote(totdData),
-      horizontalSplit, dayviewHeight,
-      Const.ScreenWidth - horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
-    )
-  }
 
   await img.draw(
     drawDock(weather, holidays, localTemperature),
