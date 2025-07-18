@@ -31,12 +31,30 @@ export const useImage = (ScreenWidth = Const.ScreenWidth, ScreenHeight = Const.S
 
   async function draw(renderer: Renderer, frameX?: number, frameY?: number, frameWidth?: number, frameHeight?: number) {
     const paint = usePaint(ctx, frameX, frameY, frameWidth, frameHeight)
-    await renderer({
-      ctx,
-      paint,
-      width: frameWidth ?? ScreenWidth,
-      height: frameHeight ?? ScreenHeight
-    })
+    try {
+      await renderer({
+        ctx,
+        paint,
+        width: frameWidth ?? ScreenWidth,
+        height: frameHeight ?? ScreenHeight
+      })
+    } catch (e) {
+      console.error(e)
+      paint
+        .newRect(0, 0, frameWidth ?? ScreenWidth, frameHeight ?? ScreenHeight)
+        .fill('checker')
+      paint
+        .newBitText('Render error: ' + (e as any).message)
+        .at((frameWidth ?? ScreenWidth) / 2, (frameHeight ?? ScreenHeight) / 2)
+        .anchor('center', 'center')
+        .maxWidth((frameWidth ?? ScreenWidth) - 20)
+        .useRect(r => r
+          .inset(-10)
+          .round(5)
+          .fill('black')
+        )
+        .render('white')
+    }
     paint.render(true)
   }
 

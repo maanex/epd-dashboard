@@ -59,9 +59,9 @@ function getSleepMinutes() {
 }
 
 async function drawScreen(localTemperature?: number | string) {
-  await weather.assertRecentData()
-  await calendar.assertRecentData()
-  await holidays.assertRecentData()
+  await weather.assertRecentData().catch(consola.error)
+  await calendar.assertRecentData().catch(consola.error)
+  await holidays.assertRecentData().catch(consola.error)
 
   const img = useImage()
 

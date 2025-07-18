@@ -202,6 +202,7 @@ export const useGCalendarApi = async (filter?: Filter) => {
   let dataTime = Date.now()
 
   async function refresh() {
+    data = { events: [], tasks: [] } // reset data to avoid showing stale data
     data = await fetch(client, filter)
     dataTime = Date.now()
   }

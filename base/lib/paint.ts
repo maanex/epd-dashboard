@@ -3,7 +3,7 @@ import { TextUtils } from "./text-utils"
 import { cFont } from "./c-font"
 
 
-export type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black'
+export type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black' | 'checker'
 export type MixMode = 'default' | 'darken' | 'lighten' | 'invert'
 
 
@@ -28,6 +28,7 @@ function rasterize(style: FillStyle, x: number, y: number) {
   if (style === 'light') return ((x + y*2) % 4) === 0 ? 0 : 1
   if (style === 'medium') return ((x + y) % 2) === 0 ? 0 : 1
   if (style === 'dark') return ((x + y*2) % 4) === 0 ? 1 : 0
+  if (style === 'checker') return (x % 10 < 5) === (y % 10 < 5) ? 0 : 1
   return 0
 }
 

@@ -85,5 +85,5 @@ export async function calcQuoteContentWidth(content: QuoteContent, maxWidth: num
   if (!content.image)
     return maxWidth
   const { width } = await loadAndDitherImage(content.image, maxWidth - 3, height - padding*2 - authorHeight - 3)
-  return width + padding * 2
+  return Math.min(maxWidth, width + padding * 2)
 }
