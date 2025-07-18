@@ -174,7 +174,10 @@ export function drawDayview(weather: WeatherApi): Renderer {
       }
     }
 
-    const currentHour = new Date().getHours()
+    let currentHour = new Date().getHours()
+    if (currentHour < firstHour)
+      currentHour += 24
+
     const currentX = hourWidth * (currentHour - firstHour) + hourWidth / 2
     if (currentX >= 0 && currentX < width) {
       const size = 14

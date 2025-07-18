@@ -11,7 +11,7 @@ type Hourly = {
   cloudCover: number
 }
 
-const url = 'https://api.open-meteo.com/v1/forecast?latitude=49.579&longitude=11.018&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,cloud_cover&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,sunshine_duration,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours&timezone=Europe%2FBerlin'
+const url = 'https://api.open-meteo.com/v1/forecast?latitude=49.579&longitude=11.018&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,cloud_cover&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,sunshine_duration,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours&timezone=Europe%2FBerlin&past_days=1'
 
 export const useWeatherApi = async () => {
   const fetchWeather = async () => {
@@ -29,10 +29,6 @@ export const useWeatherApi = async () => {
   }
 
   async function assertRecentData() {
-    if (new Date().getHours() <= 2)
-      return // we don't refresh weather data at midnight - 2am so the screen still shows yesterday :3
-    if (new Date().getHours() >= 23 && new Date().getMinutes() >= 45)
-      return // we don't refresh weather data at 11:45pm - midnight either
     if (Date.now() - dataTime > 1000 * 60 * 10) // 10 minutes
       await refresh()
   }
@@ -61,10 +57,10 @@ export const useWeatherApi = async () => {
   }
 
   function daysUntil(date: Date) {
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
+    const now = new Date(Date.now() - 2 * 60 * 60 * 1000) // only count as new day if it's past 2am
+    now.setHours(12, 0, 0, 0)
     const copy = new Date(date)
-    copy.setHours(0, 0, 0, 0)
+    copy.setHours(12, 0, 0, 0)
     return Math.ceil((copy.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
   }
 
