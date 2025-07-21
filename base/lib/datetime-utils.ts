@@ -28,4 +28,19 @@ export namespace DatetimeUtils {
       return `${-dayDifference} days ago`
   }
 
+  export function getCurrentQuaterHour() {
+    const date = new Date(Date.now() - 1000 * 60)
+    return date.getHours() * 4 + Math.floor(date.getMinutes() / 15)
+  }
+
+  export function getCurrentHour() {
+    // Return the current hour minus one minute to avoid issues with data freshness
+    return new Date(Date.now() - 1000 * 60).getHours()
+  }
+
+  export function getCurrentDay() {
+    // Return the current day minus two hours
+    return new Date(Date.now() - 1000 * 60 * 60 * 2)
+  }
+
 }

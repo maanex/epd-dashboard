@@ -1,3 +1,4 @@
+import { DatetimeUtils } from "../lib/datetime-utils"
 import type { WeatherData } from "./weather-types"
 
 
@@ -21,15 +22,15 @@ export const useWeatherApi = async () => {
   }
 
   let data = await fetchWeather()
-  let dataTime = Date.now()
+  let lastUpdateHour = DatetimeUtils.getCurrentHour()
 
   async function refresh() {
     data = await fetchWeather()
-    dataTime = Date.now()
+    lastUpdateHour = DatetimeUtils.getCurrentHour()
   }
 
   async function assertRecentData() {
-    if (Date.now() - dataTime > 1000 * 60 * 10) // 10 minutes
+    if (lastUpdateHour !== DatetimeUtils.getCurrentHour())
       await refresh()
   }
 

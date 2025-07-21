@@ -1,4 +1,5 @@
 import type { HolidaysApi } from "../api/holidays"
+import type { HomeioApi } from "../api/homeio"
 import type { WeatherApi } from "../api/weather"
 import { icons } from "../lib/icons"
 import type { Renderer } from "../lib/image"
@@ -43,7 +44,7 @@ const weatherCodeIcons: Record<number, number[]> = {
 
 const weekdayShort = [ 'SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA' ]
 
-export function drawDock(weather: WeatherApi, holidays: HolidaysApi, localTemperature?: number | string): Renderer {
+export function drawDock(weather: WeatherApi, holidays: HolidaysApi, homeio: HomeioApi, localTemperature?: number | string): Renderer {
   return ({ paint, width, height }) => {
     paint.newRect(0, 0, width, height)
       .fill('medium')
@@ -53,8 +54,9 @@ export function drawDock(weather: WeatherApi, holidays: HolidaysApi, localTemper
     const padding = 6
     const heightMinusPadding = height - padding * 2
 
-    // draw network info
-    const data = [ true, true, false ]
+    // Homeio net display
+    const homeioData = homeio.getData()
+    const data = [ homeioData.a, homeioData.b, homeioData.c ]
     const dataIcons = [ icons.v, icons.m, icons.f ]
     let leftX = heightMinusPadding * 2
     paint.newRect()

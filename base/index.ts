@@ -15,14 +15,20 @@ import consola from "consola"
 import { useHolidaysApi } from "./api/holidays"
 import { runDiscordBot } from "./discord/bot"
 import axios from "axios"
+import { DatetimeUtils } from "./lib/datetime-utils"
+import { ImgDiff } from "./lib/imgdiff"
+import { useHomeioApi } from "./api/homeio"
+import { drawFog } from "./ui/fog"
 
 
+// Register global fonts
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Modak-Regular.ttf'), 'Modak')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'NotoSans.ttf'), 'NotoSans')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
 
 
+// Initialize APIs and load data
 consola.start('Loading weather')
 const weather = await useWeatherApi()
 consola.success('Weather loaded')
@@ -38,11 +44,16 @@ consola.start('Loading holidays')
 const holidays = await useHolidaysApi()
 consola.success('Holidays loaded')
 
+consola.start('Loading homeio')
+const homeio = await useHomeioApi()
+consola.success('Homeio loaded')
+
 consola.start('Starting Discord bot')
 const disco = await runDiscordBot()
 consola.success('Discord bot started')
 
 
+// Eepy???
 function getSleepMinutes() {
   const drawingStopHour = 2
   const drawingStartHour = 6
@@ -58,12 +69,19 @@ function getSleepMinutes() {
   return Math.max(15, Math.min(60*4, Math.ceil(sleepMinutes + 1)))
 }
 
+
+// Rendering!
 async function drawScreen(localTemperature?: number | string) {
   await weather.assertRecentData().catch(consola.error)
   await calendar.assertRecentData().catch(consola.error)
   await holidays.assertRecentData().catch(consola.error)
+  await homeio.assertRecentData().catch(consola.error)
 
   const img = useImage()
+  if (homeio.getData().fog) {
+    img.draw(drawFog())
+    return img
+  }
 
   const dayviewHeight = 100
   const dockHeight = 60
@@ -102,7 +120,7 @@ async function drawScreen(localTemperature?: number | string) {
   )
 
   await img.draw(
-    drawDock(weather, holidays, localTemperature),
+    drawDock(weather, holidays, homeio, localTemperature),
     0, Const.ScreenHeight - dockHeight,
     Const.ScreenWidth, dockHeight
   )
@@ -110,20 +128,69 @@ async function drawScreen(localTemperature?: number | string) {
   return img
 }
 
+
+// Caching
+const lastImage: Map<string, Buffer> = new Map()
+const lastUpdate: Map<string, number> = new Map()
+
+function packageOp(opcode: number, payload?: Buffer) {
+  const header = 0b11101 << 3
+  const instruction = opcode & 0b111 // only last 3 bits
+  const instructionBuffer = Buffer.from([ header | instruction ])
+  const sleeptimeBuffer = Buffer.from([ getSleepMinutes() ])
+  consola.info(`Packaging operation ${opcode} with payload size ${payload?.length ?? 0} bytes`)
+  return payload
+    ? Buffer.concat([ instructionBuffer, sleeptimeBuffer, payload ])
+    : Buffer.concat([ instructionBuffer, sleeptimeBuffer ])
+}
+
+export async function buildCachedPackage(clientId: string, localTemperature?: string) {
+  const img = await drawScreen(localTemperature)
+  const imgBuffer = await img.renderFullBw()
+
+  const needsFull = !lastUpdate.has(clientId) || lastUpdate.get(clientId) !== DatetimeUtils.getCurrentHour()
+  lastUpdate.set(clientId, DatetimeUtils.getCurrentHour())
+
+  if (needsFull || !lastImage.has(clientId)) {
+    lastImage.set(clientId, imgBuffer)
+    return packageOp(Const.OpFull, imgBuffer)
+  }
+
+  if (ImgDiff.areIdentical(lastImage.get(clientId)!, imgBuffer)) {
+    return packageOp(Const.OpNoop)
+  }
+
+  const diff = ImgDiff.xor(lastImage.get(clientId)!, imgBuffer)
+  const bounds = ImgDiff.getBounds(diff, Const.ScreenWidth, Const.ScreenHeight)
+  if (bounds.w * bounds.h > Const.MaxPixelsForPartialUpdate) {
+    lastImage.set(clientId, imgBuffer)
+    return packageOp(Const.OpFull, imgBuffer)
+  }
+
+  const diffBuffer = Buffer.alloc(8 + Math.ceil(bounds.w * bounds.h / 8))
+  diffBuffer.writeUInt16BE(bounds.x, 0)
+  diffBuffer.writeUInt16BE(bounds.y, 2)
+  diffBuffer.writeUInt16BE(bounds.w, 4)
+  diffBuffer.writeUInt16BE(bounds.h, 6)
+  ImgDiff.copyBounds(diff, diffBuffer, 8, bounds, Const.ScreenWidth)
+  lastImage.set(clientId, imgBuffer)
+  return packageOp(Const.OpPart, diffBuffer)
+}
+
+
+// Serversss!!!
 const app = express()
 app.get('/r', async (req, res) => {
   const log = `Request from ${req.ip} with ${Object.entries(req.query).map(([k, v]) => `${k}=${v}`).join(', ')} - ${getSleepMinutes()}min sleep`
   consola.info(log)
   axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log, username: os.hostname() })
 
+  const clientId = req.query.client ? String(req.query.client) : 'default'
   const localTemperature = req.query.temp ? String(req.query.temp) : undefined
   const start = Date.now()
-  const img = await drawScreen(localTemperature)
-  const imgBuffer = await img.renderFullBw()
+  const payload = await buildCachedPackage(clientId, localTemperature)
   consola.info(`Completed in ${Date.now() - start}ms`)
-
-  const sleepBuffer = Buffer.from([ getSleepMinutes() ])
-  res.send(Buffer.concat([ sleepBuffer, imgBuffer ]))
+  res.send(payload)
 })
 app.get('/', async (req, res) => {
   const log = `View from ${req.ip} with ${Object.entries(req.query).map(([k, v]) => `${k}=${v}`).join(', ')} - ${getSleepMinutes()}min sleep`

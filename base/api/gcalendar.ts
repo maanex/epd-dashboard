@@ -3,6 +3,7 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import consola from 'consola'
 import type { OAuth2Client } from 'google-auth-library'
+import { DatetimeUtils } from '../lib/datetime-utils'
 
 const CREDENTIALS_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'client_secret.json')
 const TOKEN_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'token.json')
@@ -199,16 +200,16 @@ export const useGCalendarApi = async (filter?: Filter) => {
 
   const client = await createGapiClient()
   let data = await fetch(client, filter)
-  let dataTime = Date.now()
+  let lastUpdateQuater = DatetimeUtils.getCurrentQuaterHour()
 
   async function refresh() {
     data = { events: [], tasks: [] } // reset data to avoid showing stale data
     data = await fetch(client, filter)
-    dataTime = Date.now()
+    lastUpdateQuater = DatetimeUtils.getCurrentQuaterHour()
   }
 
   async function assertRecentData() {
-    if (Date.now() - dataTime > 1000 * 60 * 30) // 30 minutes
+    if (lastUpdateQuater !== DatetimeUtils.getCurrentQuaterHour())
       await refresh()
   }
 
