@@ -15,7 +15,6 @@ int disp_init(void) {
   DEV_Module_Init();
 
   printf("e-Paper Init and Clear...\r\n");
-  EPD_7IN5_V2_Init();
   // EPD_7IN5_V2_Clear();
 
   UWORD Imagesize = ((WIDTH % 8 == 0) ? (WIDTH / 8 ) : (WIDTH / 8 + 1)) * HEIGHT;
