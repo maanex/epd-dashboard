@@ -55,7 +55,6 @@ consola.success('Discord bot started')
 
 // Eepy???
 function getSleepMinutes() {
-  return 1 // TODO REMOVA MEAAA!
   const drawingStopHour = 2
   const drawingStartHour = 6
 
@@ -63,10 +62,12 @@ function getSleepMinutes() {
   const sleepMinutes = (now.getHours() >= drawingStopHour && now.getHours() < drawingStartHour)
     // minutes until 6am
     ? (drawingStartHour - now.getHours()) * 60 - now.getMinutes()
-    // minutes until next full hour
-    : (60 - now.getMinutes()) % 60
+    // minutes until next 5 minute mark
+    : (60 - now.getMinutes()) % 5
+      // // minutes until next full hour
+      // : (60 - now.getMinutes()) % 60
 
-  return Math.max(15, Math.min(60*4, Math.ceil(sleepMinutes)))
+  return Math.max(5, Math.min(60*4, Math.ceil(sleepMinutes)))
 }
 
 
