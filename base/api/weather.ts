@@ -72,6 +72,7 @@ export const useWeatherApi = async () => {
       const date = new Date(data.hourly.time[i])
       const dateDelta = daysUntil(date)
       const index = dateDelta * 24 + date.getHours()
+      console.log(index)
 
       out[index] = {
         hour: date.getHours(),
