@@ -57,7 +57,7 @@ export function drawDock(weather: WeatherApi, holidays: HolidaysApi, homeio: Hom
     // Homeio net display
     const homeioData = homeio.getData()
     const data = [ homeioData.a, homeioData.b, homeioData.c ]
-    const dataIcons = [ icons.v, icons.m, icons.f ]
+    const dataIcons = [ icons.f, icons.m, icons.v ]
     let leftX = heightMinusPadding * 2
     paint.newRect()
       .from(padding, padding)
