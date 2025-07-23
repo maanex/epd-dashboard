@@ -67,7 +67,7 @@ function getSleepMinutes() {
       // // minutes until next full hour
       // : (60 - now.getMinutes()) % 60
 
-  return Math.max(5, Math.min(60*4, Math.ceil(sleepMinutes)))
+  return Math.max(3, Math.min(60*4, Math.ceil(sleepMinutes)))
 }
 
 
