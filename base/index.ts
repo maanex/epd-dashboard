@@ -63,11 +63,11 @@ function getSleepMinutes() {
     // minutes until 6am
     ? (drawingStartHour - now.getHours()) * 60 - now.getMinutes()
     // minutes until next 5 minute mark
-    : (60 - now.getMinutes()) % 5
+    : (((60 - now.getMinutes()) % 5) + 5) % 10
       // // minutes until next full hour
       // : (60 - now.getMinutes()) % 60
 
-  return Math.max(3, Math.min(60*4, Math.ceil(sleepMinutes)))
+  return Math.max(5, Math.min(60*4, Math.ceil(sleepMinutes)))
 }
 
 
