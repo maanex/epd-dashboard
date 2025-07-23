@@ -21,8 +21,8 @@ const weatherCodeIcons: Record<number, number[]> = {
   [57]: icons.rainy, // Freezing Drizzle: dense
 
   [61]: icons.rainy, // Rain: Slight
-  [63]: icons.rainy, // Rain: moderate
-  [65]: icons.rainy, // Rain: heavy
+  [63]: icons.showers, // Rain: moderate
+  [65]: icons.showers, // Rain: heavy
   [66]: icons.rainy, // Freezing Rain: Light
   [67]: icons.rainy, // Freezing Rain: heavy
 
@@ -31,7 +31,7 @@ const weatherCodeIcons: Record<number, number[]> = {
   [75]: icons.snowy, // Snow fall: heavy
   [77]: icons.snowy, // Snow grains
 
-  [80]: icons.showers, // Rain showers: Slight
+  [80]: icons.rainy, // Rain showers: Slight
   [81]: icons.showers, // Rain showers: moderate
   [82]: icons.showers, // Rain showers: violent
   [85]: icons.snowy, // Snow showers: slight

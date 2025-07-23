@@ -423,7 +423,6 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
             let byte = 0
             for (let row = 0; row < size; row++) {
               for (let col = 0; col < font.width; col++) {
-                // console.log(row, col, charData[byte].toString(2).padStart(8, '0'), '.', (0x80 >> (col % 8)).toString(2).padStart(8, '0'), '.', charData[byte] & (0x80 >> (col % 8)))
                 if (charData[byte] & (0x80 >> (col % 8)))
                   setPixel(cX + col, cY + row, rasterize(style, x, y), mix)
 

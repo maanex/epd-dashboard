@@ -38,18 +38,18 @@ export const useWeatherApi = async () => {
 
   function getDay(relative: number) {
     return {
-      weatherCode: data.daily.weather_code[relative],
-      temperatureMax: data.daily.temperature_2m_max[relative],
-      temperatureMin: data.daily.temperature_2m_min[relative],
-      sunrise: new Date(data.daily.sunrise[relative]),
-      sunset: new Date(data.daily.sunset[relative]),
-      daylightDuration: data.daily.daylight_duration[relative],
-      sunshineDuration: data.daily.sunshine_duration[relative],
-      precipitationSum: data.daily.precipitation_sum[relative],
-      rainSum: data.daily.rain_sum[relative],
-      showersSum: data.daily.showers_sum[relative],
-      snowfallSum: data.daily.snowfall_sum[relative],
-      precipitationHours: data.daily.precipitation_hours[relative]
+      weatherCode: data.daily.weather_code[relative + 1],
+      temperatureMax: data.daily.temperature_2m_max[relative + 1],
+      temperatureMin: data.daily.temperature_2m_min[relative + 1],
+      sunrise: new Date(data.daily.sunrise[relative + 1]),
+      sunset: new Date(data.daily.sunset[relative + 1]),
+      daylightDuration: data.daily.daylight_duration[relative + 1],
+      sunshineDuration: data.daily.sunshine_duration[relative + 1],
+      precipitationSum: data.daily.precipitation_sum[relative + 1],
+      rainSum: data.daily.rain_sum[relative + 1],
+      showersSum: data.daily.showers_sum[relative + 1],
+      snowfallSum: data.daily.snowfall_sum[relative + 1],
+      precipitationHours: data.daily.precipitation_hours[relative + 1]
     }
   }
 
@@ -72,7 +72,6 @@ export const useWeatherApi = async () => {
       const date = new Date(data.hourly.time[i])
       const dateDelta = daysUntil(date)
       const index = dateDelta * 24 + date.getHours()
-      console.log(index)
 
       out[index] = {
         hour: date.getHours(),
