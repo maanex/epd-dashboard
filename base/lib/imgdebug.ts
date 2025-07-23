@@ -5,7 +5,7 @@ import { join } from 'path'
 
 export namespace ImgDebug {
 
-  export async function renderBits(bits: Buffer, width: number, height: number) {
+  export async function renderBits(bits: Buffer, width: number, height: number, as = 'debug.png') {
     const canvas = createCanvas(width, height)
     const ctx = canvas.getContext('2d')
     const imageData = ctx.getImageData(0, 0, width, height)
@@ -18,7 +18,7 @@ export namespace ImgDebug {
     }
     ctx.putImageData(imageData, 0, 0)
     const exportPng = await canvas.encode('png')
-    await promises.writeFile(join(import.meta.dirname, '..', '..', 'output', 'debug.png'), exportPng)
+    await promises.writeFile(join(import.meta.dirname, '..', '..', 'output', as), exportPng)
   }
 
 }

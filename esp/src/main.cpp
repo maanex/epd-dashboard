@@ -67,11 +67,13 @@ void setup() {
       int writePosition = 0; // position in the display buffer
 
       uint8_t opCode = 99; // 99 is invalid opcode
-      uint8_t partialBoundingX = 0;
-      uint8_t partialBoundingY = 0;
-      uint8_t partialBoundingW = 0;
-      uint8_t partialBoundingH = 0;
+      uint16_t partialBoundingX = 0;
+      uint16_t partialBoundingY = 0;
+      uint16_t partialBoundingW = 0;
+      uint16_t partialBoundingH = 0;
+      uint16_t previousImageBlockSize = 0;
       bool headerComplete = false;
+      bool prevImageComplete = false;
 
       while (http.connected() && stream->available()) {
         uint8_t buffer[128];
@@ -95,8 +97,6 @@ void setup() {
 
           if (opCode == 0) {
             Serial.println("Op: Noop");
-            headerComplete = true;
-            break;
           } else if (opCode == 1) {
             Serial.println("Op: Full");
             disp_init_full();
@@ -106,7 +106,7 @@ void setup() {
             Serial.println("Op: Part");
           } else {
             Serial.printf("Unknown opcode: %u, skipping...\n", opCode);
-            continue;
+            break;
           }
         }
 
@@ -119,6 +119,11 @@ void setup() {
             sleepMinutes = 10;
           }
           Serial.printf("Sleep minutes set to: %u\n", sleepMinutes);
+
+          if (opCode == 0) {
+            headerComplete = true;
+            break;
+          }
         }
 
         // if we are doing a partial update, we need to read the bounding box
@@ -127,20 +132,55 @@ void setup() {
             partialBoundingX = buffer[buffPosition];
             buffPosition++;
             headPosition++;
-          } else if (headPosition == 3 && len > buffPosition) {
+          }
+          if (headPosition == 3 && len > buffPosition) {
+            partialBoundingX = (partialBoundingX << 8) | buffer[buffPosition];
+            buffPosition++;
+            headPosition++;
+          }
+          if (headPosition == 4 && len > buffPosition) {
             partialBoundingY = buffer[buffPosition];
             buffPosition++;
             headPosition++;
-          } else if (headPosition == 4 && len > buffPosition) {
+          }
+          if (headPosition == 5 && len > buffPosition) {
+            partialBoundingY = (partialBoundingY << 8) | buffer[buffPosition];
+            buffPosition++;
+            headPosition++;
+          }
+          if (headPosition == 6 && len > buffPosition) {
             partialBoundingW = buffer[buffPosition];
             buffPosition++;
             headPosition++;
-          } else if (headPosition == 5 && len > buffPosition) {
+          }
+          if (headPosition == 7 && len > buffPosition) {
+            partialBoundingW = (partialBoundingW << 8) | buffer[buffPosition];
+            buffPosition++;
+            headPosition++;
+          }
+          if (headPosition == 8 && len > buffPosition) {
             partialBoundingH = buffer[buffPosition];
             buffPosition++;
             headPosition++;
-            disp_init_part();
-            disp_raw_begin(partialBoundingW, partialBoundingH);
+          }
+          if (headPosition == 9 && len > buffPosition) {
+            partialBoundingH = (partialBoundingH << 8) | buffer[buffPosition];
+            buffPosition++;
+            headPosition++;
+          }
+          if (headPosition == 10 && len > buffPosition) {
+            previousImageBlockSize = buffer[buffPosition];
+            buffPosition++;
+            headPosition++;
+          }
+          if (headPosition == 11 && len > buffPosition) {
+            previousImageBlockSize = (previousImageBlockSize << 8) | buffer[buffPosition];
+            buffPosition++;
+            headPosition++;
+
+            printf("Partial bounding box: x=%u, y=%u, w=%u, h=%u\n", partialBoundingX, partialBoundingY, partialBoundingW, partialBoundingH);
+            disp_init_full();
+            disp_raw_begin(800, 480);
             headerComplete = true;
           }
         }
@@ -158,20 +198,38 @@ void setup() {
 
         // iterate all remaining bytes in the buffer and write to the display
         for (size_t i = buffPosition; i < len; i++) {
-          disp_raw_stream_pixels(&buffer[i], 800, 480, writePosition++);
+          if (opCode == 2) {
+            if (prevImageComplete) {
+              disp_raw_stream_pixels(&buffer[i], partialBoundingW, partialBoundingH, writePosition++);
+            } else {
+              if (previousImageBlockSize > 0) {
+                previousImageBlockSize--;
+                disp_raw_stream_pixels(&buffer[i], 800, 480, writePosition++);
+              }
+              if (previousImageBlockSize == 0) {
+                writePosition = 0;
+                disp_load_ram();
+                delay(200);
+                disp_init_part();
+                disp_raw_begin(partialBoundingW, partialBoundingH);
+                prevImageComplete = true;
+                Serial.println("Previous image complete, starting partial update.");
+              }
+            }
+          } else {
+            disp_raw_stream_pixels(&buffer[i], 800, 480, writePosition++);
+          }
         }
       }
 
-      if (headerComplete) {
-        if (opCode == 1) {
-          disp_raw_render_full();
-        Serial.println("Full image rendered.");
-        } else if (opCode == 2) {
-          disp_raw_render_part(partialBoundingX, partialBoundingY, partialBoundingW, partialBoundingH);
-        Serial.println("Partial image rendered.");
-        }
-      } else {
+      if (!headerComplete) {
         Serial.println("Header not complete, image rendering aborted.");
+      } else if (opCode == 1) {
+        disp_raw_render_full();
+        Serial.println("Full image rendered.");
+      } else if (opCode == 2) {
+        disp_raw_render_part(partialBoundingX, partialBoundingY, partialBoundingW, partialBoundingH);
+        Serial.println("Partial image rendered.");
       }
     } else {
       Serial.println("Failed to download image.");

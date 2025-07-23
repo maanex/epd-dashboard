@@ -14,6 +14,7 @@ extern void disp_raw_stream_pixels(uint8_t* pixels, const int w, const int h, co
 
 extern void disp_raw_render_full(void);
 extern void disp_raw_render_part(int x, int y, int w, int h);
+extern void disp_load_ram(void);
 
 extern void disp_init_full(void);
 extern void disp_init_part(void);

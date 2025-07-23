@@ -98,7 +98,7 @@ parameter:
 ******************************************************************************/
 static void EPD_7IN5_V2_TurnOnDisplay(void)
 {	
-    EPD_SendCommand(0x12);			//DISPLAY REFRESH
+    EPD_SendCommand(0x12); //= 11 Display Refresh (DRF)
     DEV_Delay_ms(100);	        //!!!The delay here is necessary, 200uS at least!!!
     EPD_WaitUntilIdle();
 }
@@ -307,22 +307,18 @@ void EPD_7IN5_V2_ClearBlack(void)
     EPD_7IN5_V2_TurnOnDisplay();
 }
 
-/******************************************************************************
-function :	Sends the image buffer in RAM to e-Paper and displays
-parameter:
-******************************************************************************/
-void EPD_7IN5_V2_Display(UBYTE *blackimage)
+void EPD_7IN5_V2_Load_Ram(UBYTE *blackimage)
 {
     UDOUBLE Width, Height;
     Width =(EPD_7IN5_V2_WIDTH % 8 == 0)?(EPD_7IN5_V2_WIDTH / 8 ):(EPD_7IN5_V2_WIDTH / 8 + 1);
     Height = EPD_7IN5_V2_HEIGHT;
 	
-    EPD_SendCommand(0x10);
+    EPD_SendCommand(0x10); //= 9 Display Start Transmission 1 (DTM1, White/Black Data) (x-byte command) 
     for (UDOUBLE j = 0; j < Height; j++) {
         EPD_SendData2((UBYTE *)(blackimage+j*Width), Width);
     }
 
-    EPD_SendCommand(0x13);
+    EPD_SendCommand(0x13); //= 12 Display Start transmission 2 (DTM2, Red Data) (x-byte command)
     for (UDOUBLE j = 0; j < Height; j++) {
         for (UDOUBLE i = 0; i < Width; i++) {
             blackimage[i + j * Width] = ~blackimage[i + j * Width];
@@ -331,6 +327,16 @@ void EPD_7IN5_V2_Display(UBYTE *blackimage)
     for (UDOUBLE j = 0; j < Height; j++) {
         EPD_SendData2((UBYTE *)(blackimage+j*Width), Width);
     }
+}
+
+
+/******************************************************************************
+function :	Sends the image buffer in RAM to e-Paper and displays
+parameter:
+******************************************************************************/
+void EPD_7IN5_V2_Display(UBYTE *blackimage)
+{
+    EPD_7IN5_V2_Load_Ram(blackimage);
     EPD_7IN5_V2_TurnOnDisplay();
 }
 
@@ -356,12 +362,12 @@ void EPD_7IN5_V2_Display_Part(UBYTE *blackimage,UDOUBLE x_start, UDOUBLE y_start
     x_start = x_start * 8;
     x_end = x_end * 8;
 
-    EPD_SendCommand(0x50);
+    EPD_SendCommand(0x50); //= 22 VCOM and data interval setting (CDI)
 	EPD_SendData(0xA9);
 	EPD_SendData(0x07);
 
-	EPD_SendCommand(0x91);		//This command makes the display enter partial mode
-	EPD_SendCommand(0x90);		//resolution setting
+	EPD_SendCommand(0x91); //= 34 Partial In (PTIN)  //This command makes the display enter partial mode
+	EPD_SendCommand(0x90); //= 33 Partial Window (PTL)  //resolution setting
 	EPD_SendData(x_start/256);
 	EPD_SendData(x_start%256);   //x-start    
 
@@ -375,7 +381,7 @@ void EPD_7IN5_V2_Display_Part(UBYTE *blackimage,UDOUBLE x_start, UDOUBLE y_start
 	EPD_SendData(y_end%256);  //y-end
 	EPD_SendData(0x01);
     
-    EPD_SendCommand(0x13);
+    EPD_SendCommand(0x13); //= 12 Display Start transmission 2 (DTM2, Red Data) (x-byte command)
     for (UDOUBLE j = 0; j < IMAGE_COUNTER; j++) {
         EPD_SendData(blackimage[j]);
     }

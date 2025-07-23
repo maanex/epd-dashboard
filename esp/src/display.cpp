@@ -69,9 +69,14 @@ void disp_raw_stream_pixels(uint8_t* pixels, const int w, const int h, const int
   int y = 0;
   int val = 0;
   for (int i = 0; i < 8; i++) {
-    x = (offset*8 + i) % WIDTH;
-    y = (offset*8 + i) / WIDTH;
+    x = (offset*8 + i) % w;
+    y = (offset*8 + i) / w;
     val = (pixels[0] >> i) & 1;
+
+    if (y >= h) {
+      break;
+    }
+
     Paint_SetPixel(x, y, val == 0 ? BLACK : WHITE);
   }
 }
@@ -86,6 +91,10 @@ void disp_raw_render_part(int x, int y, int w, int h) {
   EPD_7IN5_V2_Display_Part(ImageBuffer, x, y, x + w, y + h);
   EPD_7IN5_V2_Sleep();
   printf("Display going to sleep...\r\n");
+}
+
+void disp_load_ram(void) {
+  EPD_7IN5_V2_Load_Ram(ImageBuffer);
 }
 
 void disp_init_full(void) {

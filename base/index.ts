@@ -55,6 +55,7 @@ consola.success('Discord bot started')
 
 // Eepy???
 function getSleepMinutes() {
+  return 1 // TODO REMOVA MEAAA!
   const drawingStopHour = 2
   const drawingStartHour = 6
 
@@ -161,17 +162,22 @@ export async function buildCachedPackage(clientId: string, localTemperature?: st
 
   const diff = ImgDiff.xor(lastImage.get(clientId)!, imgBuffer)
   const bounds = ImgDiff.getBounds(diff, Const.ScreenWidth, Const.ScreenHeight)
+  ImgDiff.rasterBounds(bounds)
   if (bounds.w * bounds.h > Const.MaxPixelsForPartialUpdate) {
     lastImage.set(clientId, imgBuffer)
     return packageOp(Const.OpFull, imgBuffer)
   }
 
-  const diffBuffer = Buffer.alloc(8 + Math.ceil(bounds.w * bounds.h / 8))
+  const lastBuffer = lastImage.get(clientId)!
+  const diffBuffer = Buffer.alloc(10 + lastBuffer.byteLength + Math.ceil(bounds.w * bounds.h / 8))
   diffBuffer.writeUInt16BE(bounds.x, 0)
   diffBuffer.writeUInt16BE(bounds.y, 2)
   diffBuffer.writeUInt16BE(bounds.w, 4)
   diffBuffer.writeUInt16BE(bounds.h, 6)
-  ImgDiff.copyBounds(diff, diffBuffer, 8, bounds, Const.ScreenWidth)
+  diffBuffer.writeUInt16BE(lastBuffer.byteLength, 8)
+  diffBuffer.fill(lastBuffer, 10, 10 + lastBuffer.byteLength)
+  ImgDiff.copyBounds(imgBuffer, diffBuffer, 10 + lastBuffer.byteLength, bounds, Const.ScreenWidth)
+
   lastImage.set(clientId, imgBuffer)
   return packageOp(Const.OpPart, diffBuffer)
 }

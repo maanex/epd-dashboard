@@ -1,5 +1,7 @@
 
 
+type Bounds = { x: number, y: number, w: number, h: number }
+
 export namespace ImgDiff {
 
   export function xor(a: Buffer, b: Buffer): Buffer {
@@ -18,7 +20,7 @@ export namespace ImgDiff {
     return true
   }
 
-  export function getBounds(xor: Buffer, width: number, height: number): { x: number, y: number, w: number, h: number } {
+  export function getBounds(xor: Buffer, width: number, height: number): Bounds {
     let x = width
     let y = height
     let w = 0
@@ -38,16 +40,44 @@ export namespace ImgDiff {
     return { x, y, w: w - x + 1, h: h - y + 1 }
   }
 
-  export function copyBounds(src: Buffer, dest: Buffer, offset: number, bounds: { x: number, y: number, w: number, h: number }, width: number) {
-    let i = 0;
-    for (let x = bounds.x; x < bounds.x + bounds.w; x++) {
-      for (let y = bounds.y; y < bounds.y + bounds.h; y++) {
-        const idx = x + y * width
-        const byte = ~~(idx / 8)
-        const bit = idx % 8
-        dest[offset + i] = (src[byte] >> bit) & 1
-        i++
+  /** round x and y down to nearest 8th */
+  export function rasterBounds(bounds: Bounds) {
+    let previousUpperX = bounds.x + bounds.w
+    let previousUpperY = bounds.y + bounds.h
+    bounds.x = Math.floor(bounds.x / 8) * 8
+    bounds.y = Math.floor(bounds.y / 8) * 8
+    bounds.w = Math.ceil(bounds.w / 8) * 8
+    bounds.h = Math.ceil(bounds.h / 8) * 8
+    if (bounds.x + bounds.w < previousUpperX)
+      bounds.w += 8
+    if (bounds.y + bounds.h < previousUpperY)
+      bounds.h += 8
+    return bounds
+  }
+
+  export function copyBounds(src: Buffer, dest: Buffer, offset: number, bounds: Bounds, width: number) {
+    let bitPos = 0;
+    let byte = 0;
+
+    for (let y = bounds.y; y < bounds.y + bounds.h; y++) {
+      for (let x = bounds.x; x < bounds.x + bounds.w; x++) {
+        const idx = x + y * width;
+        const srcByte = Math.floor(idx / 8);
+        const srcBit = idx % 8;
+        const bit = (src[srcByte] >> srcBit) & 1;
+
+        byte |= bit << (bitPos % 8);
+        bitPos++;
+
+        if (bitPos % 8 === 0) {
+          dest[offset + Math.floor(bitPos / 8) - 1] = byte;
+          byte = 0;
+        }
       }
+    }
+
+    if (bitPos % 8 !== 0) {
+      dest[offset + Math.floor(bitPos / 8)] = byte;
     }
   }
 
