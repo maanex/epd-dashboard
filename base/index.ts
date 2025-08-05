@@ -184,6 +184,9 @@ export async function buildCachedPackage(clientId: string, localTemperature?: st
 }
 
 
+const whToken = '82Fwt5m8FVeJoVQOTbdS-heUlEo61s9KKPEH-z4GLRutXvvIlYAQqrQcMfGdo2cb0Yo5'
+const whId = '1402180487795183698'
+
 // Serversss!!!
 const app = express()
 app.get('/r', async (req, res) => {
@@ -192,7 +195,7 @@ app.get('/r', async (req, res) => {
   const clientId = req.query.client ? String(req.query.client) : 'default'
   const localTemperature = req.query.temp ? String(req.query.temp) : undefined
 
-  axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log, username: `${os.hostname()} + (${clientId})` })
+  axios.post(`https://discord.com/api/webhooks/${whId}/${whToken}`, { content: log, username: `${os.hostname()} + (${clientId})` })
 
   const start = Date.now()
   const payload = await buildCachedPackage(clientId, localTemperature)
@@ -201,12 +204,12 @@ app.get('/r', async (req, res) => {
   res.send(payload)
 
   const log2 = `➥ Completed in ${resTime}ms with opcode ${payload[0] & 0b111}`
-  axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log2, username: `${os.hostname()} + (${clientId})` })
+  axios.post(`https://discord.com/api/webhooks/${whId}/${whToken}`, { content: log2, username: `${os.hostname()} + (${clientId})` })
 })
 app.get('/', async (req, res) => {
   const log = `View from ${req.ip} with ${Object.entries(req.query).map(([k, v]) => `${k}=${v}`).join(', ')} - ${getSleepMinutes()}min sleep`
   consola.info(log)
-  axios.post('https://discord.com/api/webhooks/1391761563098026064/APLUcB5akmXunrJg_syptjtj96_cDY6zbjxoFzvO8lihaKV9q3e6ztBphR93S52UgE0y', { content: log, username: os.hostname() })
+  axios.post(`https://discord.com/api/webhooks/${whId}/${whToken}`, { content: log, username: os.hostname() })
 
   const localTemperature = req.query.temp ? String(req.query.temp) : undefined
   const start = Date.now()
