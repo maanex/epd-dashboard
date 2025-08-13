@@ -1,6 +1,7 @@
 import { createCanvas, type SKRSContext2D } from "@napi-rs/canvas"
 import { TextUtils } from "./text-utils"
 import { cFont } from "./c-font"
+import * as qrcode from 'qrcode'
 
 
 export type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black' | 'checker'
@@ -654,6 +655,76 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     return out
   }
 
+  function newQrcode(data: string, x = 0, y = 0, scale = 1) {
+    const qrcodeData = {
+      data,
+      x,
+      y,
+      scale,
+      anchorX: 'left',
+      anchorY: 'top',
+    }
+
+    const out = {
+      data: (data: string) => {
+        qrcodeData.data = data
+        return out
+      },
+      at: (x: number, y: number) => {
+        qrcodeData.x = ~~x
+        qrcodeData.y = ~~y
+        return out
+      },
+      translate: (dx: number, dy: number) => {
+        qrcodeData.x += ~~dx
+        qrcodeData.y += ~~dy
+        return out
+      },
+      scale: (scale: number) => {
+        qrcodeData.scale = ~~scale
+        return out
+      },
+      anchor: (x: 'left' | 'center' | 'right', y: 'top' | 'center' | 'bottom') => {
+        qrcodeData.anchorX = x
+        qrcodeData.anchorY = y
+        return out
+      },
+      render: async (style: FillStyle, mix?: MixMode) => {
+        const { modules } = await qrcode.create(qrcodeData.data)
+        const size = modules.size
+        const matrix = modules.data
+        const realSize = size * qrcodeData.scale
+        
+        let renderX = qrcodeData.x
+        if (qrcodeData.anchorX === 'center') renderX -= realSize / 2
+        if (qrcodeData.anchorX === 'right') renderX -= realSize
+        let renderY = qrcodeData.y
+        if (qrcodeData.anchorY === 'center') renderY -= realSize / 2
+        if (qrcodeData.anchorY === 'bottom') renderY -= realSize
+
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            if (matrix[y * size + x]) {
+              for (let sy = 0; sy < qrcodeData.scale; sy++) {
+                for (let sx = 0; sx < qrcodeData.scale; sx++) {
+                  setPixel(
+                    renderX + x * qrcodeData.scale + sx,
+                    renderY + y * qrcodeData.scale + sy,
+                    rasterize(style, x * qrcodeData.scale + sx, y * qrcodeData.scale + sy),
+                    mix
+                  )
+                }
+              }
+            }
+          }
+        }
+        return out
+      },
+    }
+
+    return out
+  }
+
   function render(onlyIfChanges = false) {
     if (onlyIfChanges && !changes) return
     for (let i = 0; i < data.length; i++) {
@@ -686,6 +757,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     newTriangle,
     newIcon,
     newYarndings,
+    newQrcode,
     render
   }
 }

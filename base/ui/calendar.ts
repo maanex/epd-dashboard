@@ -239,8 +239,27 @@ function drawTasks(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnT
   }
 }
 
+function drawQRCode(calendarApi: GCalendarApi, paint: ReturnType<typeof usePaint>, width: number, height: number) {
+  const qr = calendarApi.generateAuthUrl()
+  paint.newRect(0, 0, width, height)
+    .fill('checker')
+    .fill('medium', 'lighten')
+    .inset(10)
+    .fill('white')
+  paint.newQrcode(qr)
+    .at(width / 2, height / 2)
+    .scale(3)
+    .anchor('center', 'center')
+    .render('black')
+}
+
 export function drawCalendarAgenda(calendarApi: GCalendarApi): Renderer {
   return ({ paint, width, height }) => {
+    if (calendarApi.isSignedOut) {
+      drawQRCode(calendarApi, paint, width, height)
+      return
+    }
+
     const calendar = calendarApi.getData()
     if (calendar.tasks.length) {
       drawAgenda(calendar, paint, Math.floor(width * hsplit), height)

@@ -13,6 +13,8 @@ const SCOPES = [
   'https://www.googleapis.com/auth/tasks.readonly'
 ]
 
+export const SIGNED_OUT = Symbol('signed-out')
+
 async function listCalendars(auth: any) {
   const calendar = google.calendar({ version: 'v3', auth })
   const res = await calendar.calendarList.list()
@@ -72,6 +74,15 @@ type Filter = {
 async function fetch(authClient: OAuth2Client, filter?: Filter) {
   consola.withTag('gCalendar').info('Fetching calendar data')
   let calendars = await listCalendars(authClient)
+    .catch(err => {
+      if ((err as any).response?.status === 400)
+        return SIGNED_OUT
+      else
+        throw err
+    }) as unknown as Awaited<ReturnType<typeof listCalendars>> | typeof SIGNED_OUT
+
+  if (calendars === SIGNED_OUT)
+    return SIGNED_OUT
 
   if (filter?.whitelist) {
     calendars = calendars.filter(calendar => filter.whitelist?.some(wl => {
@@ -194,7 +205,10 @@ export const useGCalendarApi = async (filter?: Filter) => {
         tasks: []
       }),
       refresh: async () => {},
-      assertRecentData: async () => {}
+      assertRecentData: async () => {},
+      isSignedOut: false,
+      generateAuthUrl: () => '',
+      setCredentials: () => {}
     }
   }
 
@@ -214,9 +228,18 @@ export const useGCalendarApi = async (filter?: Filter) => {
   }
 
   return {
-    getData: () => data,
+    getData: () => data as Exclude<typeof data, typeof SIGNED_OUT>,
     refresh,
-    assertRecentData
+    assertRecentData,
+    isSignedOut: data === SIGNED_OUT,
+    generateAuthUrl: () => client.generateAuthUrl({
+      access_type: 'offline',
+      scope: SCOPES,
+      redirect_uri: 'http://go-local.maanex.me:3034/?=gcalendar-callback'
+    }),
+    setCredentials: (tokens: any) => {
+      client.setCredentials(tokens)
+    }
   }
 }
 

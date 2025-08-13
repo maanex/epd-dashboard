@@ -221,4 +221,12 @@ app.get('/', async (req, res) => {
   res.send(imgBuffer)
 })
 app.get('/discord-manual', () => disco.badaboom())
+app.get('/gcalendar-callback', (req, res) => {
+  const code = req.query.code
+  
+  
+  res.send('<!DOCTYPE html><html><body><script>window.close();</script></body></html>')
+})
 app.listen(3034, '0.0.0.0', () => consola.log('Server is running on http://localhost:3034'))
+
+console.log(calendar.generateAuthUrl())
