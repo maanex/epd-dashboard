@@ -83,10 +83,6 @@ async function drawScreen(localTemperature?: number | string) {
     img.draw(drawFog())
     return img
   }
-  if (true) {
-    // TODO: holiday mode
-    return img
-  }
 
   const dayviewHeight = 100
   const dockHeight = 60
