@@ -249,22 +249,19 @@ export async function runDiscordBot() {
 
     const archiveBro = await client.channels.fetch(archive) as BaseGuildTextChannel
     if (archiveBro) {
-      archiveBro.send({
+      await archiveBro.send({
         flags: 32768,
         files: [
           { attachment: Buffer.from(file), name: fileName }
         ],
         components: [
-          { type: 10, content: `${new Date().toISOString().split('T')[0]} by <@${winner.authorId}>`, },
+          { type: 10, content: `${new Date().toISOString().split('T')[0]} by ${winner.author}`, },
           {
             type: 12, items: [
               { media: { url: `attachment://${fileName}`, } }
             ]
           },
-        ],
-        allowed_mentions: {
-          parse: []
-        }
+        ]
       })
     }
 
