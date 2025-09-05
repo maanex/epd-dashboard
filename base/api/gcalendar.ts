@@ -75,7 +75,7 @@ async function fetch(authClient: OAuth2Client, filter?: Filter) {
   consola.withTag('gCalendar').info('Fetching calendar data')
   let calendars = await listCalendars(authClient)
     .catch(err => {
-      if ((err as any).response?.status === 400)
+      if ((err as any).response?.status === 400 || (err as any).response?.status === 401)
         return SIGNED_OUT
       else
         throw err
@@ -235,7 +235,7 @@ export const useGCalendarApi = async (filter?: Filter) => {
     generateAuthUrl: () => client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
-      redirect_uri: 'http://go-local.maanex.me:3034/?=gcalendar-callback'
+      redirect_uri: 'https://raspi.salmon-court.ts.net:3035/gcalendar-callback'
     }),
     setCredentials: (tokens: any) => {
       client.setCredentials(tokens)

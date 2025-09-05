@@ -19,6 +19,8 @@ import { DatetimeUtils } from "./lib/datetime-utils"
 import { ImgDiff } from "./lib/imgdiff"
 import { useHomeioApi } from "./api/homeio"
 import { drawFog } from "./ui/fog"
+import http from 'http'
+import https from 'https'
 
 
 // Register global fonts
@@ -223,7 +225,18 @@ app.get('/', async (req, res) => {
 app.get('/discord-manual', () => disco.badaboom())
 app.get('/gcalendar-callback', (req, res) => {
   const code = req.query.code
+  console.log('GCalendar OAuth callback received with code:', code)
   
   res.send('<!DOCTYPE html><html><body><script>window.close();</script></body></html>')
 })
-app.listen(3034, '0.0.0.0', () => consola.log('Server is running on http://localhost:3034'))
+
+const CRT_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'raspi.salmon-court.ts.net.crt')
+const KEY_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'raspi.salmon-court.ts.net.key')
+if (await fs.exists(CRT_PATH)) {
+  const httpServer = http.createServer(app)
+  const httpsServer = https.createServer({ key: await fs.readFile(KEY_PATH), cert: await fs.readFile(CRT_PATH) }, app)
+  httpServer.listen(3034, '0.0.0.0', () => consola.log('Server is running on http://localhost:3034'))
+  httpsServer.listen(3035, '0.0.0.0', () => consola.log('Server is running on https://localhost:3035'))
+} else {
+  app.listen(3034, '0.0.0.0', () => consola.log('Server is running on http://localhost:3034'))
+}
