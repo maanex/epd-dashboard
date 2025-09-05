@@ -208,7 +208,7 @@ export const useGCalendarApi = async (filter?: Filter) => {
       assertRecentData: async () => {},
       isSignedOut: false,
       generateAuthUrl: () => '',
-      setCredentials: () => {}
+      provideAuthCode: () => {}
     }
   }
 
@@ -237,8 +237,14 @@ export const useGCalendarApi = async (filter?: Filter) => {
       scope: SCOPES,
       redirect_uri: 'https://raspi.salmon-court.ts.net:3035/gcalendar-callback'
     }),
-    setCredentials: (tokens: any) => {
-      client.setCredentials(tokens)
+    provideAuthCode: async (code: any) => {
+      try {
+        const tokenResponse = await client.getToken(String(code))
+        client.setCredentials(tokenResponse.tokens)
+      } catch (err: any) {
+        consola.error('Error retrieving access token', err)
+        throw err
+      }
     }
   }
 }

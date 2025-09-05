@@ -226,8 +226,8 @@ app.get('/discord-manual', () => disco.badaboom())
 app.get('/gcalendar-callback', (req, res) => {
   const code = req.query.code
   console.log('GCalendar OAuth callback received with code:', code)
-  
-  res.send('<!DOCTYPE html><html><body><script>window.close();</script></body></html>')
+  calendar.provideAuthCode(String(code))
+  res.send('<!DOCTYPE html><html><body>Thanks 👍<script>window.close();</script></body></html>')
 })
 
 const CRT_PATH = path.join(import.meta.dirname, '..', 'credentials', 'raspi.salmon-court.ts.net.crt')
