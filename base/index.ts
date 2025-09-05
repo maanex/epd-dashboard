@@ -230,8 +230,8 @@ app.get('/gcalendar-callback', (req, res) => {
   res.send('<!DOCTYPE html><html><body><script>window.close();</script></body></html>')
 })
 
-const CRT_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'raspi.salmon-court.ts.net.crt')
-const KEY_PATH = path.join(import.meta.dirname, '..', '..', 'credentials', 'raspi.salmon-court.ts.net.key')
+const CRT_PATH = path.join(import.meta.dirname, '..', 'credentials', 'raspi.salmon-court.ts.net.crt')
+const KEY_PATH = path.join(import.meta.dirname, '..', 'credentials', 'raspi.salmon-court.ts.net.key')
 if (await fs.exists(CRT_PATH)) {
   const httpServer = http.createServer(app)
   const httpsServer = https.createServer({ key: await fs.readFile(KEY_PATH), cert: await fs.readFile(CRT_PATH) }, app)
