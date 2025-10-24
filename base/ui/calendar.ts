@@ -6,14 +6,13 @@ import type { usePaint } from "../lib/paint"
 
 const defaultTaskListName = 'Meine Aufgaben'
 const hsplit = 0.6
+const maxAgendaWidth = 220
+const maxTasksWidth = 180
 
 
 function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnType<typeof usePaint>, width: number, height: number) {
   const padding = 15
   const maxWidth = width - padding * 2
-
-  paint.newRect(0, 0, width, height)
-    .fill('white')
 
   paint
     .newText(new Date().toLocaleDateString('de-DE', {
@@ -23,8 +22,11 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
     }).replace('.,', ','))
     .at(padding, padding)
     .anchor('left', 'top')
-    .size(28)
     .font('Modak')
+    .size(28)
+    .threshold(0.75)
+    .renderOutline('white', 1)
+    .render('white')
     .threshold(0.05)
     .render('black')
 
@@ -50,10 +52,14 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       .useRect(r => r
         .inset(-inset)
         .sized(r.getSize().width + 6, r.getSize().height - 1)
+        .round(4)
+        .inset(-3)
+        .fill('white')
+        .inset(3)
         .round(2)
         .useCopy(r => r
           .translate(3, 3)
-          .fill('light')
+          .fill('light', 'darken')
         )
         .fill('black')
         .inset(1)
@@ -92,8 +98,12 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       .anchor('left', 'top')
       .useRect(r => r
         .inset(-inset)
-        .round(2)
         .sized(r.getSize().width, r.getSize().height - 2)
+        .round(4)
+        .inset(-3)
+        .fill('white')
+        .inset(3)
+        .round(2)
         .fill('black')
         .inset(1)
         .fill(event.isOver ? 'white' : 'black')
@@ -107,7 +117,15 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       .at(x, y)
       .size(12)
       .anchor('left', 'top')
-      .useRect(r => r.fill('white'))
+      .useRect(r => r
+        .round(4)
+        .inset(-4, -5)
+        .translate(0, -1)
+        .fill('white')
+        .round(0)
+        .sized(3, null)
+        .fill('white')
+      )
       .render('black')
 
     y += textEvent.toRect().getSize().height + 10
@@ -126,6 +144,9 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
     paint
       .newRect(padding, y, maxWidth, 1)
       .inset(0.5)
+      .inset(-1)
+      .fill('white')
+      .inset(1)
       .fill('medium')
     y += padding
   }
@@ -133,10 +154,14 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
   paint
     .newRect(padding - 1, y - 4, 25, height)
     .round(-4)
+    .inset(-1)
+    .fill('white')
+    .inset(1)
     .fill('medium')
 
   let lastDate = ''
   let lastX = 0
+  let connectToTop = false
   for (let i = 0; i < 12; i++) {
     if (y >= height - padding * 2) break
     const event = upcoming[i]
@@ -163,9 +188,11 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       x += width
       lastDate = date
       lastX = width
+      connectToTop = false
     } else {
       x += lastX
       y -= 11
+      connectToTop = true
     }
 
     const textEvent = paint.newBitText(event.summary)
@@ -173,7 +200,17 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       .at(x, y)
       .size(12)
       .anchor('left', 'top')
-      .useRect(r => r.fill('white'))
+      .useRect(r => {
+        r
+          .translate(0, -1)
+          .round(-2)
+          .inset(-4, -2)
+          .fill('white')
+        if (connectToTop)
+          r.translate(0, -3)
+            .round(-1)
+            .fill('white')
+      })
       .render('black')
 
     y += textEvent.toRect().getSize().height + 15
@@ -186,16 +223,13 @@ function drawTasks(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnT
   const rightPadding = 5
   const maxWidth = width - rightPadding - innerPadding * 2
 
-  paint.newRect(0, 0, width, height)
-    .fill('white')
-
   paint.newRect()
     .from(0, outerPadding)
     .sized(width - rightPadding, height - outerPadding * 2)
     .round(5)
       .useCopy(r => r
         .translate(3, 3)
-        .fill('light')
+        .fill('light', 'darken')
       )
       .fill('black')
       .inset(1)
@@ -266,20 +300,28 @@ function drawQRCode(calendarApi: GCalendarApi, paint: ReturnType<typeof usePaint
     .render('black')
 }
 
-export function drawCalendarAgenda(calendarApi: GCalendarApi): Renderer {
+export function drawCalendarAgenda(calendarApi: GCalendarApi, asOverlay: boolean): Renderer {
   return ({ paint, width, height }) => {
     if (calendarApi.isSignedOut) {
       drawQRCode(calendarApi, paint, width, height)
       return
     }
 
+    if (!asOverlay) {
+      paint.newRect(0, 0, width, height)
+        .fill('white')
+    }
+
     const calendar = calendarApi.getData()
     if (calendar.tasks.length) {
-      drawAgenda(calendar, paint, Math.floor(width * hsplit), height)
-      paint.transform(Math.floor(width * hsplit), 0)
-      drawTasks(calendar, paint, Math.ceil(width * (1 - hsplit)), height)
+      const agendaWidth = Math.min(Math.floor(width * hsplit), maxAgendaWidth)
+      drawAgenda(calendar, paint, agendaWidth, height)
+      const tasksPotentialWidth = Math.ceil(width * (1 - hsplit))
+      const tasksActualWidth = Math.min(tasksPotentialWidth, maxTasksWidth)
+      paint.transform(width - tasksActualWidth, 0)
+      drawTasks(calendar, paint, tasksActualWidth, height)
     } else {
-      drawAgenda(calendar, paint, width, height)
+      drawAgenda(calendar, paint, Math.min(width, maxAgendaWidth), height)
     }
   }
 }

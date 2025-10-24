@@ -103,23 +103,32 @@ async function drawScreen(localTemperature?: number | string) {
     Const.ScreenWidth, dayviewHeight
   )
 
+  const totdFullscreen = totdData && (totdData.text === 'fullscreen' && totdData.image)
   if (totdData) {
-    await img.draw(
-      drawQuote(totdData),
-      maxHorizontalSplit, dayviewHeight,
-      Const.ScreenWidth - maxHorizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
-    )
-    horizontalSplit = Const.ScreenWidth - await calcQuoteContentWidth(
-      totdData,
-      Const.ScreenWidth - maxHorizontalSplit,
-      Const.ScreenHeight - dayviewHeight - dockHeight
-    )
+    if (totdFullscreen) {
+      await img.draw(
+        drawQuote(totdData, true),
+        0, dayviewHeight,
+        Const.ScreenWidth, Const.ScreenHeight - dayviewHeight - dockHeight
+      )
+    } else {
+      await img.draw(
+        drawQuote(totdData, false),
+        maxHorizontalSplit, dayviewHeight,
+        Const.ScreenWidth - maxHorizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
+      )
+      horizontalSplit = Const.ScreenWidth - await calcQuoteContentWidth(
+        totdData,
+        Const.ScreenWidth - maxHorizontalSplit,
+        Const.ScreenHeight - dayviewHeight - dockHeight
+      )
+    }
   }
 
   img.draw(
-    drawCalendarAgenda(calendar),
+    drawCalendarAgenda(calendar, totdFullscreen),
     0, dayviewHeight,
-    horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
+    totdFullscreen ? Const.ScreenWidth : horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
   )
 
   await img.draw(

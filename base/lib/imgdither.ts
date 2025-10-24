@@ -32,7 +32,7 @@ export function orderedDither(imageData: Buffer, width: number, height: number) 
   return imageData
 }
 
-export async function loadAndDitherImage(url: string, maxWidth: number, maxHeight: number) {
+export async function loadAndDitherImage(url: string, maxWidth: number, maxHeight: number, fit: 'cover' | 'contain' = 'contain') {
   let data: Buffer
   if (!url.startsWith('http')) {
     // local file
@@ -53,10 +53,10 @@ export async function loadAndDitherImage(url: string, maxWidth: number, maxHeigh
   const xAdjust = maxWidth / meta.width!
   const yAdjust = maxHeight / meta.height!
   const adjust = Math.min(xAdjust, yAdjust)
-  const width = ~~(adjust * meta.width!)
-  const height = ~~(adjust * meta.height!)
-  const scaled = await sharp(data)
-    .resize(width, height, { kernel: 'lanczos3' })
+  const width = fit === 'contain' ? ~~(adjust * meta.width!) : maxWidth
+  const height = fit === 'contain' ? ~~(adjust * meta.height!) : maxHeight
+  const scaled = sharp(data)
+    .resize(width, height, { kernel: 'lanczos3', fit: 'cover' })
     .modulate({ brightness: 1.1, saturation: 1.1 })
     .sharpen(1, 1, 3)
   const dithered = orderedDither(await scaled.removeAlpha().raw().toBuffer(), width, height)
