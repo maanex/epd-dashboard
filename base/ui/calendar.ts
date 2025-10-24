@@ -120,8 +120,8 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
     return
 
   y += padding - 10
-  if (y < height / 2 - padding) {
-    y = height / 2 + padding
+  if (y < height / 4 - padding) {
+    y = height / 4 + padding
   } else {
     paint
       .newRect(padding, y, maxWidth, 1)
@@ -181,7 +181,7 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
 }
 
 function drawTasks(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnType<typeof usePaint>, width: number, height: number) {
-  const outerPadding = 15
+  const outerPadding = 10
   const innerPadding = 10
   const rightPadding = 5
   const maxWidth = width - rightPadding - innerPadding * 2
@@ -201,10 +201,23 @@ function drawTasks(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnT
       .inset(1)
       .fill('white')
 
+  const endOfToday = new Date()
+  endOfToday.setHours(23, 59, 59, 999)
+
+  let previousWasHighlighted = false
   let y = outerPadding + innerPadding + 1
   for (let i = 0; i < 8; i++) {
     const task = calendar.tasks[i]
     if (!task) break
+
+    if (task.due && new Date(task.due).getTime() < endOfToday.getTime()) {
+      previousWasHighlighted = true
+    } else if (previousWasHighlighted) {
+      paint.newRect(1, y, width - rightPadding - 2, 1)
+        .fill('black')
+      y += 10
+      previousWasHighlighted = false
+    }
 
     const isInDefaultList = task.partOf.title === defaultTaskListName
 

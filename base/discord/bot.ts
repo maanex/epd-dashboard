@@ -274,6 +274,16 @@ export async function runDiscordBot() {
     }
   }
 
+  client.on(Events.MessageReactionAdd, (reaction, user) => {
+    if (!reaction.message.author || reaction.message.author.bot)
+      return
+    if (reaction.message.channelId !== channel)
+      return
+
+    if (reaction.emoji.name === '👎' && reaction.message.author.id === user.id)
+      reaction.message.delete().catch(console.error)
+  })
+
   client.on(Events.InteractionCreate, int => Promise.try(async () => {
     if (int.isRepliable()) {
       int.reply({

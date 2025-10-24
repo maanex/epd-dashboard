@@ -4,18 +4,21 @@ import type { usePaint } from "./paint"
 import path from "path"
 import * as fs from 'fs/promises'
 
-
 const bayerMatrix = [
-  [  0,  8,  2, 10 ],
-  [ 12,  4, 14,  6 ],
-  [  3, 11,  1,  9 ],
-  [ 15,  7, 13,  5 ]
+  [0, 48, 12, 60, 3, 51, 15, 63],
+  [32, 16, 44, 28, 35, 19, 47, 31],
+  [8, 56, 4, 52, 11, 59, 7, 55],
+  [40, 24, 36, 20, 43, 27, 39, 23],
+  [2, 50, 14, 62, 1, 49, 13, 61],
+  [34, 18, 46, 30, 33, 17, 45, 29],
+  [10, 58, 6, 54, 9, 57, 5, 53],
+  [42, 26, 38, 22, 41, 25, 37, 21],
 ]
+const matrixSize = 8
+const matrixScale = 64
+
 
 export function orderedDither(imageData: Buffer, width: number, height: number) {
-  const matrixSize = 4
-  const matrixScale = 16
-
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 3
@@ -52,7 +55,10 @@ export async function loadAndDitherImage(url: string, maxWidth: number, maxHeigh
   const adjust = Math.min(xAdjust, yAdjust)
   const width = ~~(adjust * meta.width!)
   const height = ~~(adjust * meta.height!)
-  const scaled = await sharp(data).resize({ width, height })
+  const scaled = await sharp(data)
+    .resize(width, height, { kernel: 'lanczos3' })
+    .modulate({ brightness: 1.1, saturation: 1.1 })
+    .sharpen(1, 1, 3)
   const dithered = orderedDither(await scaled.removeAlpha().raw().toBuffer(), width, height)
   return { dithered, width, height }
 }

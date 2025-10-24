@@ -182,7 +182,10 @@ async function createGapiClient() {
       const code = await consola.prompt('Enter the code from that page here: ')
 
       try {
-        const tokenResponse = await oAuth2Client.getToken(String(code))
+        const parsedCode = String(code).includes('%')
+          ? decodeURIComponent(String(code))
+          : String(code)
+        const tokenResponse = await oAuth2Client.getToken(parsedCode)
         oAuth2Client.setCredentials(tokenResponse.tokens)
         return oAuth2Client
       } catch (err: any) {
