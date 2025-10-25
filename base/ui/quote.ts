@@ -9,7 +9,6 @@ type QuoteContent = {
 }
 
 const padding = 10
-// const authorHeight = 18
 
 export function drawQuote(content: QuoteContent, fullscreen: boolean): Renderer {
   return async ({ paint, width, height }) => {

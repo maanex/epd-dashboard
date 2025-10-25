@@ -29,7 +29,14 @@ GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Not
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
 
-const fullscreenTriggerWords = [ 'fullscreen', 'full', 'large', 'big', 'wallpaper', 'cover' ]
+export const fullscreenTriggerWords = [
+  'fullscreen',
+  'full',
+  'large',
+  'big',
+  'wallpaper',
+  'cover'
+]
 
 
 // Initialize APIs and load data

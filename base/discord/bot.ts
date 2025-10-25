@@ -6,6 +6,7 @@ import consola from 'consola'
 import { useImage } from '../lib/image'
 import { drawQuote } from '../ui/quote'
 import axios from 'axios'
+import { fullscreenTriggerWords } from '..'
 
 
 const loadingEmojis = [ '🫦', '😍', '👀', '📸', '👍', '🤨', '👽', '🆗', '❔', '🤡' ]
@@ -112,28 +113,28 @@ export async function runDiscordBot() {
       return
     }
 
-    let text: string | undefined = undefined
-    if (!hasImage) {
-      text = message.content
-        .replace(/<@!?(\d+)>/g, (_, id) => {
-          const user = message.guild?.members.cache.get(id)?.user
-          return user ? `@${user.username}` : `<@${id}>`
-        })
-        .replace(/<#(\d+)>/g, (_, id) => {
-          const channel = message.guild?.channels.cache.get(id) as TextChannel
-          return channel ? `#${channel.name}` : `<#${id}>`
-        })
-    } else {
+    let text = message.content
+      .replace(/<@!?(\d+)>/g, (_, id) => {
+        const user = message.guild?.members.cache.get(id)?.user
+        return user ? `@${user.username}` : `<@${id}>`
+      })
+      .replace(/<#(\d+)>/g, (_, id) => {
+        const channel = message.guild?.channels.cache.get(id) as TextChannel
+        return channel ? `#${channel.name}` : `<#${id}>`
+      })
+    if (hasImage)
       downloadImage(image?.proxyURL ?? image?.url, `${message.id}.png`)
-    }
 
-    const img = useImage(800 - 400, 480 - 160)
+    const isFullScreen = fullscreenTriggerWords.includes(text?.toLowerCase())
+    const img = isFullScreen
+      ? useImage(800, 480 - 160)
+      : useImage(800 - 400, 480 - 160)
     await img.draw(
       drawQuote({
         author: message.author.displayName,
         text,
         image: image?.url,
-      }),
+      }, isFullScreen),
       0, 0,
       img.width, img.height
     )
@@ -165,7 +166,7 @@ export async function runDiscordBot() {
       id: mes.id,
       author: message.author.username,
       authorId: message.author.id,
-      text: hasImage ? undefined : text,
+      text,
       image: hasImage ? `${message.id}.png` : undefined,
     })
     saveDb()
