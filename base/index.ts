@@ -29,6 +29,8 @@ GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Not
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
 
+const fullscreenTriggerWords = [ 'fullscreen', 'full', 'large', 'big', 'wallpaper', 'cover' ]
+
 
 // Initialize APIs and load data
 consola.start('Loading weather')
@@ -103,7 +105,7 @@ async function drawScreen(localTemperature?: number | string) {
     Const.ScreenWidth, dayviewHeight
   )
 
-  const totdFullscreen = totdData && (totdData.text === 'fullscreen' && totdData.image)
+  const totdFullscreen = totdData && totdData.image && fullscreenTriggerWords.includes(totdData.text?.toLowerCase() ?? '')
   if (totdData) {
     if (totdFullscreen) {
       await img.draw(
