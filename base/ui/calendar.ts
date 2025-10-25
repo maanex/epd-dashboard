@@ -10,7 +10,7 @@ const maxAgendaWidth = 220
 const maxTasksWidth = 180
 
 
-function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnType<typeof usePaint>, width: number, height: number) {
+function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnType<typeof usePaint>, width: number, height: number, asOverlay: boolean) {
   const padding = 15
   const maxWidth = width - padding * 2
 
@@ -52,12 +52,12 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       .useRect(r => r
         .inset(-inset)
         .sized(r.getSize().width + 6, r.getSize().height - 1)
-        .round(4)
-        .inset(-3)
-        .fill('white')
-        .inset(3)
         .round(2)
-        .useCopy(r => r
+        .inset(-1)
+        .fill('white')
+        .inset(1)
+        .round(2)
+        .useCopy(r => !asOverlay && r
           .translate(3, 3)
           .fill('light', 'darken')
         )
@@ -123,8 +123,16 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
         .translate(0, -1)
         .fill('white')
         .round(0)
-        .sized(3, null)
-        .fill('white')
+        .useCopy(r2 => r2
+          .translate(-2, 1)
+          .sized(7, 4)
+          .fill('white')
+        )
+        .useCopy(r3 => r3
+          .sized(7, 4)
+          .translate(-2, r.getSize().height - 4)
+          .fill('white')
+        )
       )
       .render('black')
 
@@ -140,13 +148,12 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
   y += padding - 10
   if (y < height / 4 - padding) {
     y = height / 4 + padding
+  } else if (asOverlay) {
+    y += padding * 2
   } else {
     paint
       .newRect(padding, y, maxWidth, 1)
       .inset(0.5)
-      .inset(-1)
-      .fill('white')
-      .inset(1)
       .fill('medium')
     y += padding
   }
@@ -217,7 +224,7 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
   }
 }
 
-function drawTasks(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnType<typeof usePaint>, width: number, height: number) {
+function drawTasks(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnType<typeof usePaint>, width: number, height: number, asOverlay: boolean) {
   const outerPadding = 10
   const innerPadding = 10
   const rightPadding = 5
@@ -315,13 +322,13 @@ export function drawCalendarAgenda(calendarApi: GCalendarApi, asOverlay: boolean
     const calendar = calendarApi.getData()
     if (calendar.tasks.length) {
       const agendaWidth = Math.min(Math.floor(width * hsplit), maxAgendaWidth)
-      drawAgenda(calendar, paint, agendaWidth, height)
+      drawAgenda(calendar, paint, agendaWidth, height, asOverlay)
       const tasksPotentialWidth = Math.ceil(width * (1 - hsplit))
       const tasksActualWidth = Math.min(tasksPotentialWidth, maxTasksWidth)
-      paint.transform(width - tasksActualWidth, 0)
-      drawTasks(calendar, paint, tasksActualWidth, height)
+      paint.transform(width - tasksActualWidth - (asOverlay ? 5 : 0), 0)
+      drawTasks(calendar, paint, tasksActualWidth, height, asOverlay)
     } else {
-      drawAgenda(calendar, paint, Math.min(width, maxAgendaWidth), height)
+      drawAgenda(calendar, paint, Math.min(width, maxAgendaWidth), height, asOverlay)
     }
   }
 }

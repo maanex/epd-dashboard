@@ -274,7 +274,10 @@ export async function runDiscordBot() {
     }
   }
 
-  client.on(Events.MessageReactionAdd, (reaction, user) => {
+  client.on(Events.MessageReactionAdd, async (reaction, user) => {
+    if (reaction.message.partial)
+      await reaction.message.fetch()
+
     if (!reaction.message.author || reaction.message.author.bot)
       return
     if (reaction.message.channelId !== channel)
