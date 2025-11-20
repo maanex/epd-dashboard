@@ -220,9 +220,10 @@ export async function runDiscordBot() {
 
     fs.writeFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'totd.json'), JSON.stringify(winner)).catch(console.error)
 
+    const isFullScreen = fullscreenTriggerWords.includes(winner.text?.toLowerCase())
     const img = useImage(800 - 400, 480 - 160)
     await img.draw(
-      drawQuote(winner),
+      drawQuote(winner, isFullScreen),
       0, 0,
       img.width, img.height
     )
