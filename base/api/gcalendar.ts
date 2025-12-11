@@ -18,19 +18,25 @@ export const SIGNED_OUT = Symbol('signed-out')
 async function listCalendars(auth: any) {
   const calendar = google.calendar({ version: 'v3', auth })
   const res = await calendar.calendarList.list()
-  return res.data.items ?? []
+  if (!res.data.items)
+    return SIGNED_OUT
+  if (!res.data.items?.length)
+    return []
+  return res.data.items
 }
 
 async function listTasks(auth: any) {
   const tasks = google.tasks({ version: 'v1', auth })
   const res = await tasks.tasklists.list()
+  if (!res.data.items)
+    return SIGNED_OUT
   if (!res.data.items?.length)
     return []
 
   const entries = await Promise.all(res.data.items.map(async list => {
     const res2 = await tasks.tasks.list({
       tasklist: list.id!,
-      maxResults: 10,
+      maxResults: 15,
       auth
     })
     if (!res2.data.items?.length)
@@ -41,11 +47,14 @@ async function listTasks(auth: any) {
     }))
   }))
 
+  const inThreeDays = new Date()
+  inThreeDays.setDate(inThreeDays.getDate() + 3)
+
   return entries
     .flat()
     .sort((a, b) => {
-      const aDate = new Date(a.due || Number.MAX_SAFE_INTEGER)
-      const bDate = new Date(b.due || Number.MAX_SAFE_INTEGER)
+      const aDate = new Date(a.due || inThreeDays.getTime())
+      const bDate = new Date(b.due || inThreeDays.getTime())
       return aDate.getTime() - bDate.getTime()
     })
 }
@@ -79,7 +88,7 @@ async function fetch(authClient: OAuth2Client, filter?: Filter) {
         return SIGNED_OUT
       else
         throw err
-    }) as unknown as Awaited<ReturnType<typeof listCalendars>> | typeof SIGNED_OUT
+    }) as unknown as Awaited<ReturnType<typeof listCalendars>>
 
   if (calendars === SIGNED_OUT)
     return SIGNED_OUT
@@ -140,6 +149,8 @@ async function fetch(authClient: OAuth2Client, filter?: Filter) {
     .sort((a, b) => a.start.getTime() - b.start.getTime())
 
   const tasks = await listTasks(authClient)
+  if (tasks === SIGNED_OUT)
+    return SIGNED_OUT
 
   return {
     events,
