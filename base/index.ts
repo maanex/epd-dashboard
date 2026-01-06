@@ -17,7 +17,6 @@ import { runDiscordBot } from "./discord/bot"
 import axios from "axios"
 import { DatetimeUtils } from "./lib/datetime-utils"
 import { ImgDiff } from "./lib/imgdiff"
-import { useHomeioApi } from "./api/homeio"
 import { drawFog } from "./ui/fog"
 import http from 'http'
 import https from 'https'
@@ -55,10 +54,6 @@ consola.start('Loading holidays')
 const holidays = await useHolidaysApi()
 consola.success('Holidays loaded')
 
-consola.start('Loading homeio')
-const homeio = await useHomeioApi()
-consola.success('Homeio loaded')
-
 consola.start('Starting Discord bot')
 const disco = await runDiscordBot()
 consola.success('Discord bot started')
@@ -87,13 +82,12 @@ async function drawScreen(localTemperature?: number | string) {
   await weather.assertRecentData().catch(consola.error)
   await calendar.assertRecentData().catch(consola.error)
   await holidays.assertRecentData().catch(consola.error)
-  await homeio.assertRecentData().catch(consola.error)
 
   const img = useImage()
-  if (homeio.getData().fog) {
-    img.draw(drawFog())
-    return img
-  }
+  // if (homeio.getData().fog) {
+  //   img.draw(drawFog())
+  //   return img
+  // }
 
   const dayviewHeight = 100
   const dockHeight = 60
@@ -141,7 +135,7 @@ async function drawScreen(localTemperature?: number | string) {
   )
 
   await img.draw(
-    drawDock(weather, holidays, homeio, localTemperature),
+    drawDock(weather, holidays, localTemperature),
     0, Const.ScreenHeight - dockHeight,
     Const.ScreenWidth, dockHeight
   )

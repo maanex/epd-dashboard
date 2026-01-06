@@ -44,7 +44,7 @@ const weatherCodeIcons: Record<number, number[]> = {
 
 const weekdayShort = [ 'SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA' ]
 
-export function drawDock(weather: WeatherApi, holidays: HolidaysApi, homeio: HomeioApi, localTemperature?: number | string): Renderer {
+export function drawDock(weather: WeatherApi, holidays: HolidaysApi, localTemperature?: number | string): Renderer {
   return ({ paint, width, height }) => {
     paint.newRect(0, 0, width, height)
       .fill('medium')
@@ -53,47 +53,14 @@ export function drawDock(weather: WeatherApi, holidays: HolidaysApi, homeio: Hom
 
     const padding = 6
     const heightMinusPadding = height - padding * 2
-
-    // Homeio net display
-    const homeioData = homeio.getData()
-    const data = [ homeioData.a, homeioData.b, homeioData.c ]
-    const dataIcons = [ icons.f, icons.m, icons.v ]
-    let leftX = heightMinusPadding * 2
-    paint.newRect()
-      .from(padding, padding)
-      .sized(heightMinusPadding * 2, heightMinusPadding)
-      .round(3)
-      .fill('white')
-      .translate(2, 2)
-      .fill('dark')
-      .translate(-2, -2)
-      .fill('black')
-      .inset(1)
-      .fill('white')
-
-    for (let i = 0; i < data.length; i++) {
-      const left = padding + heightMinusPadding / 2 * (i + 1)
-
-      paint.newIcon(dataIcons[i])
-        .at(left, heightMinusPadding / 2 + padding)
-        .anchor('center', 'center')
-        .fill('black')
-
-      if (data[i]) {
-        paint.newRect()
-          .from(left - 12, heightMinusPadding / 2 + padding - 13)
-          .sized(23, 26)
-          .round(2)
-          .fill('black', 'invert')
-      }
-    }
+    let leftX = 0
 
     // Local temperature
     if (localTemperature) {
       const boxPadding = 15
       const rounded = Math.round(typeof localTemperature === 'string' ? parseFloat(localTemperature) : localTemperature)
       paint.newText(rounded + '°')
-        .at(leftX + padding * 2 + boxPadding, padding + heightMinusPadding / 2)
+        .at(leftX + padding + boxPadding, padding + heightMinusPadding / 2)
         .size(16)
         .anchor('left', 'center')
         .useRect(rect => rect.round(3)
