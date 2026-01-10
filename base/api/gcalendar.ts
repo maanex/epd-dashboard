@@ -186,6 +186,7 @@ async function createGapiClient() {
       const authUrl = oAuth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: SCOPES,
+        prompt: 'consent'
       })
       consola.warn('Google API Credentials not found. Please sign in.')
       consola.log(authUrl)
