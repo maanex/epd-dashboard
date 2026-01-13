@@ -3,6 +3,7 @@ import type { HomeioApi } from "../api/homeio"
 import type { WeatherApi } from "../api/weather"
 import { icons } from "../lib/icons"
 import type { Renderer } from "../lib/image"
+import { getDayLength } from "../lib/sun-position"
 
 
 const weatherCodeIcons: Record<number, number[]> = {
@@ -53,14 +54,14 @@ export function drawDock(weather: WeatherApi, holidays: HolidaysApi, localTemper
 
     const padding = 6
     const heightMinusPadding = height - padding * 2
-    let leftX = 0
+    const boxPadding = 15
+    let leftX = padding
 
     // Local temperature
     if (localTemperature) {
-      const boxPadding = 15
       const rounded = Math.round(typeof localTemperature === 'string' ? parseFloat(localTemperature) : localTemperature)
-      paint.newText(rounded + '°')
-        .at(leftX + padding + boxPadding, padding + heightMinusPadding / 2)
+      const width = paint.newText(rounded + '°')
+        .at(leftX + boxPadding, padding + heightMinusPadding / 2)
         .size(16)
         .anchor('left', 'center')
         .useRect(rect => rect.round(3)
@@ -76,8 +77,46 @@ export function drawDock(weather: WeatherApi, holidays: HolidaysApi, localTemper
           .fill('white')
         )
         .render('black')
-        .useRect(rect => leftX += rect.getSize().width + padding + boxPadding * 2)
+        .toRect()
+        .getSize()
+        .width
+      leftX += width + padding + boxPadding * 2
     }
+
+    const today = new Date()
+    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))
+    const dayLength = getDayLength(dayOfYear)
+    const dayChangeToday = Math.floor((dayLength - getDayLength(dayOfYear - 1)) * 60)
+    const dayChangeNextWeek = Math.floor((getDayLength(dayOfYear + 7) - dayLength) * 60)
+
+    leftX += leftX % 2 // visual offset for dithering
+    paint.newRect(leftX, padding, heightMinusPadding, heightMinusPadding)
+      .round(3)
+      .fill('white')
+      .translate(2, 2)
+      .fill('dark')
+      .translate(-2, -2)
+      .fill('black')
+      .inset(1)
+      .fill('white')
+
+    paint
+      .newBitText(`${dayChangeToday >= 0 ? '+' : ''}${dayChangeToday}`)
+      .at(leftX + heightMinusPadding / 2, padding + heightMinusPadding / 2)
+      .size(16)
+      .anchor('center', 'bottom')
+      .render('black')
+    paint
+      .newRect(leftX + 2, height / 2)
+      .sized(heightMinusPadding - 4, 1)
+      .fill('medium')
+    paint
+      .newBitText(`${dayChangeNextWeek >= 0 ? '+' : ''}${dayChangeNextWeek}`)
+      .at(leftX + heightMinusPadding / 2, padding + heightMinusPadding / 2 + 5)
+      .size(16)
+      .anchor('center', 'top')
+      .render('black')
+
 
     // draw weather info
     const numDays = 7
