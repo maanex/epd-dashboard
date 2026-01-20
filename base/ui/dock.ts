@@ -1,5 +1,4 @@
 import type { HolidaysApi } from "../api/holidays"
-import type { HomeioApi } from "../api/homeio"
 import type { WeatherApi } from "../api/weather"
 import { icons } from "../lib/icons"
 import type { Renderer } from "../lib/image"
