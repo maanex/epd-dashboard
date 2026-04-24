@@ -18,14 +18,22 @@ const matrixSize = 8
 const matrixScale = 64
 
 
-export function orderedDither(imageData: Buffer, width: number, height: number) {
+export function orderedDither<T extends Buffer | Uint8Array>(imageData: T, width: number, height: number): T {
+  const isBuffer = Buffer.isBuffer(imageData)
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const i = (y * width + x) * 3
-      const gray = 0.3 * imageData[i] + 0.59 * imageData[i+1] + 0.11 * imageData[i+2]
       const threshold = bayerMatrix[y % matrixSize][x % matrixSize] * 255 / matrixScale
-      const value = gray > threshold ? 255 : 0
-      imageData[i] = imageData[i+1] = imageData[i+2] = value
+
+      if (isBuffer) {
+        const i = (y * width + x) * 3
+        const gray = (0.3 * imageData[i] + 0.59 * imageData[i+1] + 0.11 * imageData[i+2])
+        const value = gray > threshold ? 255 : 0
+        imageData[i] = imageData[i+1] = imageData[i+2] = value
+      } else {
+        const i = y * width + x
+        const value = imageData[i] > threshold ? 1 : 0
+        imageData[i] = value
+      }
     }
   }
 

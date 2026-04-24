@@ -1,22 +1,12 @@
 import type { WeatherApi } from "../../api/weather"
-import { Easings } from "../../lib/easings"
 import { icons } from "../../lib/icons"
 import type { Renderer } from "../../lib/image"
+import { orderedDither } from "../../lib/imgdither"
 import type { FillStyle } from "../../lib/paint"
 
 
 const firstHour = 6
 const lastHour = 26
-
-function getDarkness(value: number): FillStyle {
-  if (value < 15) return 'white'
-  if (value < 30) return 'lightest'
-  if (value < 50) return 'lighter'
-  if (value < 75) return 'light'
-  if (value < 85) return 'medium'
-  if (value < 93) return 'dark'
-  return 'black'
-}
 
 function blendValues(numA: number, numB: number, weight: number): number {
   if (numA === undefined)
@@ -26,18 +16,46 @@ function blendValues(numA: number, numB: number, weight: number): number {
   return numA * (1 - weight) + numB * weight
 }
 
+function clampIndex(values: number[], index: number): number {
+  if (index <= 0)
+    return values[0]
+  if (index >= values.length - 1)
+    return values[values.length - 1]
+  return values[index]
+}
+
+function sampleCatmullRom(values: number[], t: number): number {
+  const i1 = Math.floor(t)
+  const i2 = i1 + 1
+  const p0 = clampIndex(values, i1 - 1)
+  const p1 = clampIndex(values, i1)
+  const p2 = clampIndex(values, i2)
+  const p3 = clampIndex(values, i2 + 1)
+  const u = t - i1
+  const u2 = u * u
+  const u3 = u2 * u
+
+  return 0.5 * (
+    2 * p1 +
+    (-p0 + p2) * u +
+    (2 * p0 - 5 * p1 + 4 * p2 - p3) * u2 +
+    (-p0 + 3 * p1 - 3 * p2 + p3) * u3
+  )
+}
+
 export function drawDayview(weather: WeatherApi): Renderer {
   return ({ paint, width, height }) => {
     const hourCount = (lastHour - firstHour)
 
     const today = weather.getToday()
     const hourly = weather.getHourly().slice(firstHour, lastHour)
+    const hourWidth = width / hourCount
 
     const temperatureMax = Math.max(...hourly.map(h => h.temperature))
     const temperatureMin = Math.min(...hourly.map(h => h.temperature))
     const temperatureDelta = temperatureMax - temperatureMin
+    const temperatureRange = Math.max(temperatureDelta, 0.0001)
 
-    const hourWidth = width / hourCount
     const cloudCoverHeight = ~~(height * 0.18)
 
     const sunriseRelative = today.sunrise.getHours() - firstHour
@@ -75,35 +93,55 @@ export function drawDayview(weather: WeatherApi): Renderer {
           .sized(hourWidth - part, height)
           .fill('lighter')
       }
+    }
 
-      // cloud coverage
-      for (let part = 0; part < 5; part++) {
-        const x = hourWidth * hour + (part * hourWidth / 5)
-        const value = (part === 2) ? hourly[hour].cloudCover
-          : (part === 0) ? blendValues(hourly[hour-1]?.cloudCover, hourly[hour].cloudCover, 1/3)
-          : (part === 1) ? blendValues(hourly[hour-1]?.cloudCover, hourly[hour].cloudCover, 2/3)
-          : (part === 3) ? blendValues(hourly[hour].cloudCover, hourly[hour+1]?.cloudCover, 1/3)
-          : (part === 4) ? blendValues(hourly[hour].cloudCover, hourly[hour+1]?.cloudCover, 2/3)
-          : 0
-
-        for (let yi = 0; yi < cloudCoverHeight; yi += 1) {
-          const falloff = Math.sqrt((cloudCoverHeight - yi) / cloudCoverHeight)
-          paint.newRect()
-            .from(x, yi)
-            .sized(hourWidth / 5, 1)
-            .fill(getDarkness(value * falloff), 'darken')
+    // Clouds
+    const grayscaleMap = new Uint8Array(width * cloudCoverHeight)
+    const addCloud = (x: number, impact: number) => {
+      const size = impact * hourWidth
+      const left = Math.floor(x - size/2)
+      const right = Math.ceil(x + size/2)
+      const cloudY = cloudCoverHeight * Math.exp(-size/15) - (cloudCoverHeight * 0.2)
+      const cloudHeight = Math.min(cloudCoverHeight - cloudY, size/3)
+      for (let xi = left; xi < right; xi++) {
+        if (xi < 0 || xi >= width)
+          continue
+        const relX = Math.abs((xi - x) / (size/2))
+        for (let yi = 0; yi < cloudCoverHeight; yi++) {
+          const relY = Math.abs((yi - cloudY) / cloudHeight)
+          const dist = Math.sqrt(relX**2 + relY**2)
+          if (dist < 1) {
+            const value = Math.round(Math.max(0, 1 - dist) * impact**2 * 180)
+            grayscaleMap[yi * width + xi] = Math.min(grayscaleMap[yi * width + xi] + value, 255)
+          }
         }
       }
     }
 
+    for (let hour = 0; hour < hourCount; hour++) {
+      const cloudDensity = hourly[hour].cloudCover / 100
+      if (cloudDensity > 0) {
+        const cloudCount = Math.round((cloudDensity ** 2) * 8)
+        for (let i = 0; i < cloudCount; i++) {
+          const x = hourWidth * hour + (Math.sin(i * 17.1 + hour*1.41 + cloudDensity*2)/2 + 0.5) * hourWidth * 0.9 + hourWidth * 0.05
+          addCloud(x, cloudDensity / (Math.max(1, i/1.7)))
+        }
+      }
+    }
+    orderedDither(grayscaleMap, width, cloudCoverHeight)
+    for (let yi = 0; yi < cloudCoverHeight; yi++) {
+      for (let xi = 0; xi < width; xi++) {
+        if (grayscaleMap[yi * width + xi] > 0)
+          paint.setPixel(xi, yi, 0)
+      }
+    }
+
     const tempUpper = ~~(height * 0.1)
-    const tempLower = ~~(height - height * 0.2)
+    const tempLower = ~~(height * 0.8)
     const rainHeight = ~~(height * 0.8)
     const tempVar = tempLower - tempUpper
-    const hourWidthHalf = hourWidth/2
 
-    let x = 0, y = 0, p = 0, g = 0, w = 0
-    let leftValue = 0, centerValue = 0, rightValue = 0
+    // Hour dividers
     for (let hour = 0; hour < hourCount; hour++) {
       if (hour !== 0) {
         paint.newRect()
@@ -111,66 +149,71 @@ export function drawDayview(weather: WeatherApi): Renderer {
           .sized((hour + firstHour) % 6 === 0 ? 2 : 1, height)
           .fill((hour + firstHour) % 6 === 0 ? 'black' : 'medium', 'darken')
       }
+    }
 
-      // Rain
-      leftValue = hourly[hour === 0 ? 0 : (hour - 1)].precipitationProbability
-      centerValue = hourly[hour].precipitationProbability
-      rightValue = hourly[hour === (hourCount - 1) ? (hourCount - 1) : (hour + 1)].precipitationProbability
-      for (let xi = 0; xi < hourWidthHalf; xi++) {
-        x = xi + hourWidth * hour
-        p = xi / hourWidthHalf
-        g = (leftValue + centerValue) / 2
-        w = g + Easings.easeOutQuad(p) * (centerValue - g)
-        y = height - rainHeight * w / 100
-        for (let yi = y; yi < height; yi++)
-          paint.setPixel(x, yi, 0)
-      }
-      for (let xi = hourWidthHalf; xi < hourWidth; xi++) {
-        x = xi + hourWidth * hour
-        p = (xi - hourWidthHalf) / hourWidthHalf
-        g = (centerValue + rightValue) / 2
-        w = centerValue + Easings.easeInQuad(p) * (g - centerValue)
-        y = height - rainHeight * w / 100
-        for (let yi = y; yi < height; yi++)
-          paint.setPixel(x, yi, 0)
-      }
+    // Horizontal temperature lines
+    for (const thresh of [ -10, 0, 10, 20, 30 ]) {
+      const y = tempLower - tempVar * (thresh - temperatureMin) / temperatureRange
+      if (y < tempUpper/2 || y > height)
+        continue
 
+      paint.newRect()
+        .from(0, y)
+        .sized(width, 1)
+        .fill('medium', 'darken')
+    }
+
+    const toHourT = (x: number) => (x / Math.max(1, width - 1)) * (hourCount - 1)
+    const rainValues = hourly.map(h => h.precipitationProbability)
+    const tempValues = hourly.map(h => h.temperature)
+    const rainTopYs: number[] = []
+    const tempYs: number[] = []
+
+    // Precalculating rain and temperature positions
+    for (let xi = 0; xi < width; xi++) {
+      const t = toHourT(xi)
+      const rainValue = Math.max(0, Math.min(100, sampleCatmullRom(rainValues, t)))
+      const tempValue = sampleCatmullRom(tempValues, t)
+
+      rainTopYs.push(height - rainHeight * rainValue / 100)
+      tempYs.push(tempLower - tempVar * (tempValue - temperatureMin) / temperatureRange)
+    }
+
+    // Filling rain
+    for (let xi = 0; xi < width; xi++) {
+      const rainTop = Math.max(0, Math.min(height - 1, Math.round(rainTopYs[xi])))
+      for (let yi = rainTop; yi < height; yi++)
+        paint.setPixel(xi, yi, 0)
+      paint.setPixel(xi, rainTop, 1)
+    }
+
+    // Two passes for temperature (white outline and black inner)
+    const drawStrokeSegment = (x0: number, y0: number, x1: number, y1: number, radius: number, fill: FillStyle) => {
+      const dx = x1 - x0
+      const dy = y1 - y0
+      const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) * 2))
+
+      for (let i = 0; i <= steps; i++) {
+        const p = i / steps
+        const x = x0 + dx * p
+        const y = y0 + dy * p
+        paint.newDisc().at(x, y).radius(radius).fill(fill)
+      }
+    }
+    for (let xi = 1; xi < width; xi++) {
+      drawStrokeSegment(xi - 1, tempYs[xi - 1], xi, tempYs[xi], 3, 'white')
+    }
+    for (let xi = 1; xi < width; xi++) {
+      drawStrokeSegment(xi - 1, tempYs[xi - 1], xi, tempYs[xi], 1, 'black')
+    }
+
+    // Thunder icons
+    for (let hour = 0; hour < hourCount; hour++) {
       if (hourly[hour].weatherCode >= 90 && hourly[hour].weatherCode < 100) {
         paint.newIcon(icons.lightning)
           .at(hourWidth * hour + hourWidth / 2, height * 0.8)
           .anchor('center', 'center')
           .fill('black', 'invert')
-      }
-
-      // Temperature
-      leftValue = hourly[hour === 0 ? 0 : (hour - 1)].temperature
-      centerValue = hourly[hour].temperature
-      rightValue = hourly[hour === (hourCount - 1) ? (hourCount - 1) : (hour + 1)].temperature
-      for (let xi = 0; xi < hourWidthHalf; xi++) {
-        x = xi + hourWidth * hour
-        p = xi / hourWidthHalf
-        g = (leftValue + centerValue) / 2
-        w = g + Easings.easeOutQuad(p) * (centerValue - g)
-        y = tempLower - tempVar * (w - temperatureMin) / temperatureDelta
-        paint.setPixel(x, y-2, 1)
-        paint.setPixel(x, y-1, 1)
-        paint.setPixel(x, y, 0)
-        paint.setPixel(x, y+1, 0)
-        paint.setPixel(x, y+2, 1)
-        paint.setPixel(x, y+3, 1)
-      }
-      for (let xi = hourWidthHalf; xi < hourWidth; xi++) {
-        x = xi + hourWidth * hour
-        p = (xi - hourWidthHalf) / hourWidthHalf
-        g = (centerValue + rightValue) / 2
-        w = centerValue + Easings.easeInQuad(p) * (g - centerValue)
-        y = tempLower - tempVar * (w - temperatureMin) / temperatureDelta
-        paint.setPixel(x, y-2, 1)
-        paint.setPixel(x, y-1, 1)
-        paint.setPixel(x, y, 0)
-        paint.setPixel(x, y+1, 0)
-        paint.setPixel(x, y+2, 1)
-        paint.setPixel(x, y+3, 1)
       }
     }
 
@@ -185,7 +228,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
     const currentX = hourWidth * (currentHour - firstHour) + halfHourOffset * hourWidth
     if (currentX >= 0 && currentX < width) {
       const size = 14
-      const y = tempLower - tempVar * (hourly[currentHour - firstHour].temperature - temperatureMin) / temperatureDelta - size/2 + 1
+      const y = tempYs[currentX] - size/2 + 1
       paint.newRect()
         .from(currentX - size/2, y)
         .sized(size, size)
@@ -234,7 +277,7 @@ export function drawDayview(weather: WeatherApi): Renderer {
       const hour = hourly[hourIdx]
       if (!hour) continue
 
-      const yRel = (hour.temperature - temperatureMin) / temperatureDelta
+      const yRel = (hour.temperature - temperatureMin) / temperatureRange
       const y = tempLower - tempVar * yRel
       const yOff = yRel < 0.5 ? -15 : 15
 

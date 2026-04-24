@@ -59,7 +59,7 @@ async function downloadImage(url: string | undefined, filename: string) {
   fs.writeFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'cache', filename), buff.data)
 }
 
-export async function runDiscordBot() {
+export async function runDiscordBot(opts?: { dummy?: boolean }) {
   const config = await fs.readFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'discord.json'))
   const database = await fs.readFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'datacord.json'))
   const { token, id: selfId, channel, archive } = JSON.parse(config.toString())
@@ -300,6 +300,8 @@ export async function runDiscordBot() {
 
   client.once(Events.ClientReady, () => schedule('30 3 * * *', badaboom))
 
-  client.login(token)
+  if (!opts?.dummy)
+    client.login(token)
+
   return { badaboom }
 }

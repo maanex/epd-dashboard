@@ -21,6 +21,15 @@ type RectPaint = {
   getSize: () => { x: number, y: number, width: number, height: number }
 }
 
+type DiscPaint = {
+  at: (x: number, y: number) => DiscPaint
+  translate: (dx: number, dy: number) => DiscPaint
+  radius: (radius: number) => DiscPaint
+  fill: (style: FillStyle, mix?: MixMode) => DiscPaint
+  outline: (style: FillStyle, width: number, mix?: MixMode) => DiscPaint
+  useCopy: (fn: (disc: DiscPaint) => any) => DiscPaint
+}
+
 function rasterize(style: FillStyle, x: number, y: number) {
   if (style === 'black') return 0
   if (style === 'white') return 1
@@ -164,6 +173,74 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         return out
       },
       getSize: () => ({ x: rect.x, y: rect.y, width: rect.w, height: rect.h })
+    }
+
+    return out
+  }
+
+  function newDisc(x = 0, y = 0, radius = 1) {
+    const disc = {
+      x,
+      y,
+      radius
+    }
+
+    const out: DiscPaint = {
+      at: (x: number, y: number) => {
+        disc.x = x
+        disc.y = y
+        return out
+      },
+      translate: (dx: number, dy: number) => {
+        disc.x += dx
+        disc.y += dy
+        return out
+      },
+      radius: (radius: number) => {
+        disc.radius = Math.max(0, radius)
+        return out
+      },
+      fill: (style: FillStyle, mix?: MixMode) => {
+        const r = Math.max(0, ~~disc.radius)
+        for (let oy = -r; oy <= r; oy++) {
+          for (let ox = -r; ox <= r; ox++) {
+            if (ox * ox + oy * oy > r * r)
+              continue
+            const px = Math.round(disc.x + ox)
+            const py = Math.round(disc.y + oy)
+            setPixel(px, py, rasterize(style, px, py), mix)
+          }
+        }
+        return out
+      },
+      outline: (style: FillStyle, width: number, mix?: MixMode) => {
+        const r = Math.max(0, disc.radius)
+        const w = width
+        if (w < 0)
+          return out
+
+        const inner = r - w
+        const innerSq = inner * inner
+        const outerSq = r * r
+
+        for (let oy = -r; oy <= r; oy++) {
+          for (let ox = -r; ox <= r; ox++) {
+            const distSq = ox * ox + oy * oy
+            if (distSq > outerSq) continue
+            if (inner > 0 && distSq < innerSq) continue
+
+            const px = Math.round(disc.x + ox)
+            const py = Math.round(disc.y + oy)
+            setPixel(px, py, rasterize(style, px, py), mix)
+          }
+        }
+
+        return out
+      },
+      useCopy: (fn: (disc: DiscPaint) => any) => {
+        fn(newDisc(disc.x, disc.y, disc.radius))
+        return out
+      }
     }
 
     return out
@@ -752,6 +829,7 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
     clearTransform,
     setPixel,
     newRect,
+    newDisc,
     newText,
     newBitText,
     newTriangle,
