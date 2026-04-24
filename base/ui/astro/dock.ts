@@ -1,8 +1,8 @@
-import type { HolidaysApi } from "../api/holidays"
-import type { WeatherApi } from "../api/weather"
-import { icons } from "../lib/icons"
-import type { Renderer } from "../lib/image"
-import { getDayLength } from "../lib/sun-position"
+import type { HolidaysApi } from "../../api/holidays"
+import type { WeatherApi } from "../../api/weather"
+import { icons } from "../../lib/icons"
+import type { Renderer } from "../../lib/image"
+import { getDayLength } from "../../lib/sun-position"
 
 
 const weatherCodeIcons: Record<number, number[]> = {

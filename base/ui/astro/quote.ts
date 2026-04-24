@@ -1,8 +1,8 @@
-import type { Renderer } from "../lib/image"
-import { drawDitheredImage, loadAndDitherImage } from "../lib/imgdither"
+import type { Renderer } from "../../lib/image"
+import { drawDitheredImage, loadAndDitherImage } from "../../lib/imgdither"
 
 
-type QuoteContent = {
+export type QuoteContent = {
   author: string
   text?: string
   image?: string

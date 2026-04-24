@@ -1,7 +1,7 @@
-import type { GCalendarApi } from "../api/gcalendar"
-import { DatetimeUtils } from "../lib/datetime-utils"
-import type { Renderer } from "../lib/image"
-import type { usePaint } from "../lib/paint"
+import type { GCalendarApi } from "../../api/gcalendar"
+import { DatetimeUtils } from "../../lib/datetime-utils"
+import type { Renderer } from "../../lib/image"
+import type { usePaint } from "../../lib/paint"
 
 
 const defaultTaskListName = 'Meine Aufgaben'

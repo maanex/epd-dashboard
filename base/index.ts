@@ -1,25 +1,21 @@
-import express from "express"
+import express from 'express'
 import os from 'node:os'
 import * as fs from 'fs/promises'
-import { useWeatherApi } from "./api/weather"
-import { useImage } from "./lib/image"
-import { drawDayview } from "./ui/dayview"
-import { GlobalFonts } from '@napi-rs/canvas'
 import * as path from 'path'
-import { Const } from "./lib/const"
-import { calcQuoteContentWidth, drawQuote } from "./ui/quote"
-import { drawDock } from "./ui/dock"
-import { useGCalendarApi } from "./api/gcalendar"
-import { drawCalendarAgenda } from "./ui/calendar"
-import consola from "consola"
-import { useHolidaysApi } from "./api/holidays"
-import { runDiscordBot } from "./discord/bot"
-import axios from "axios"
-import { DatetimeUtils } from "./lib/datetime-utils"
-import { ImgDiff } from "./lib/imgdiff"
-import { drawFog } from "./ui/fog"
+import { useWeatherApi } from './api/weather'
+import { GlobalFonts } from '@napi-rs/canvas'
+import { Const } from './lib/const'
+import { useGCalendarApi } from './api/gcalendar'
+import consola from 'consola'
+import { useHolidaysApi } from './api/holidays'
+import { runDiscordBot } from './discord/bot'
+import axios from 'axios'
+import { DatetimeUtils } from './lib/datetime-utils'
+import { ImgDiff } from './lib/imgdiff'
 import http from 'http'
 import https from 'https'
+import { createStandardFace } from './ui/standard/_face'
+import { createAstroFace } from './ui/astro/_face'
 
 
 // Register global fonts
@@ -27,15 +23,6 @@ GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Mod
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'NotoSans.ttf'), 'NotoSans')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
-
-export const fullscreenTriggerWords = [
-  'fullscreen',
-  'full',
-  'large',
-  'big',
-  'wallpaper',
-  'cover'
-]
 
 
 // Initialize APIs and load data
@@ -78,69 +65,34 @@ function getSleepMinutes() {
 
 
 // Rendering!
-async function drawScreen(localTemperature?: number | string) {
+async function drawScreen(opts: {
+  localTemperature?: number | string,
+  totdOverride?: Record<string, any>
+}) {
   await weather.assertRecentData().catch(consola.error)
   await calendar.assertRecentData().catch(consola.error)
   await holidays.assertRecentData().catch(consola.error)
-
-  const img = useImage()
-  // if (homeio.getData().fog) {
-  //   img.draw(drawFog())
-  //   return img
-  // }
-
-  const dayviewHeight = 100
-  const dockHeight = 60
-  const maxHorizontalSplit = 400
-  let horizontalSplit = maxHorizontalSplit
 
   const totd = await fs.readFile(
     path.join(import.meta.dirname, '..', 'credentials', 'totd.json'),
     'utf-8'
   ).catch(() => null)
   const totdData = await Promise.try(() => JSON.parse(totd ?? '')).catch(() => null)
-
-  await img.draw(
-    drawDayview(weather),
-    0, 0,
-    Const.ScreenWidth, dayviewHeight
-  )
-
-  const totdFullscreen = totdData && totdData.image && fullscreenTriggerWords.includes(totdData.text?.toLowerCase() ?? '')
-  if (totdData) {
-    if (totdFullscreen) {
-      await img.draw(
-        drawQuote(totdData, true),
-        0, dayviewHeight,
-        Const.ScreenWidth, Const.ScreenHeight - dayviewHeight - dockHeight
-      )
-    } else {
-      await img.draw(
-        drawQuote(totdData, false),
-        maxHorizontalSplit, dayviewHeight,
-        Const.ScreenWidth - maxHorizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
-      )
-      horizontalSplit = Const.ScreenWidth - await calcQuoteContentWidth(
-        totdData,
-        Const.ScreenWidth - maxHorizontalSplit,
-        Const.ScreenHeight - dayviewHeight - dockHeight
-      )
+  if (opts.totdOverride) {
+    for (const [k, v] of Object.entries(opts.totdOverride)) {
+      if (v !== undefined)
+        totdData[k] = v
     }
   }
 
-  img.draw(
-    drawCalendarAgenda(calendar, totdFullscreen),
-    0, dayviewHeight,
-    totdFullscreen ? Const.ScreenWidth : horizontalSplit, Const.ScreenHeight - dayviewHeight - dockHeight
-  )
-
-  await img.draw(
-    drawDock(weather, holidays, localTemperature),
-    0, Const.ScreenHeight - dockHeight,
-    Const.ScreenWidth, dockHeight
-  )
-
-  return img
+  // return createStandardFace({
+  return createAstroFace({
+    weather,
+    calendar,
+    holidays,
+    quote: totdData,
+    localTemperature: opts.localTemperature
+  })
 }
 
 
@@ -160,7 +112,7 @@ function packageOp(opcode: number, payload?: Buffer) {
 }
 
 export async function buildCachedPackage(clientId: string, localTemperature?: string) {
-  const img = await drawScreen(localTemperature)
+  const img = await drawScreen({ localTemperature })
   const imgBuffer = await img.renderFullBw()
 
   const needsFull = !lastUpdate.has(clientId) || lastUpdate.get(clientId) !== DatetimeUtils.getCurrentHour()
@@ -227,7 +179,13 @@ app.get('/', async (req, res) => {
 
   const localTemperature = req.query.temp ? String(req.query.temp) : undefined
   const start = Date.now()
-  const img = await drawScreen(localTemperature)
+  const img = await drawScreen({
+    localTemperature,
+    totdOverride: {
+      text: req.query.text !== undefined ? String(req.query.text) : undefined,
+      image: req.query.image !== undefined ? String(req.query.image) : undefined
+    }
+  })
   const imgBuffer = await img.exportFullBw()
   consola.info(`Completed in ${Date.now() - start}ms`)
 
@@ -244,7 +202,7 @@ app.get('/gcalendar-callback', (req, res) => {
 
 const CRT_PATH = path.join(import.meta.dirname, '..', 'credentials', 'raspi.salmon-court.ts.net.crt')
 const KEY_PATH = path.join(import.meta.dirname, '..', 'credentials', 'raspi.salmon-court.ts.net.key')
-if (await fs.exists(CRT_PATH)) {
+if (await fs.stat(CRT_PATH).catch(() => false)) {
   const httpServer = http.createServer(app)
   const httpsServer = https.createServer({ key: await fs.readFile(KEY_PATH), cert: await fs.readFile(CRT_PATH) }, app)
   httpServer.listen(3034, '0.0.0.0', () => consola.log('Server is running on http://localhost:3034'))

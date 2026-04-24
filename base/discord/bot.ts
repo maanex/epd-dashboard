@@ -4,9 +4,9 @@ import { BaseGuildTextChannel, ChannelType, Client, Events, GatewayIntentBits, T
 import { schedule } from 'node-cron'
 import consola from 'consola'
 import { useImage } from '../lib/image'
-import { drawQuote } from '../ui/quote'
+import { drawQuote } from '../ui/standard/quote'
 import axios from 'axios'
-import { fullscreenTriggerWords } from '..'
+import { Const } from '../lib/const'
 
 
 const loadingEmojis = [ '🫦', '😍', '👀', '📸', '👍', '🤨', '👽', '🆗', '❔', '🤡' ]
@@ -125,7 +125,7 @@ export async function runDiscordBot() {
     if (hasImage)
       downloadImage(image?.proxyURL ?? image?.url, `${message.id}.png`)
 
-    const isFullScreen = fullscreenTriggerWords.includes(text?.toLowerCase())
+    const isFullScreen = Const.FullscreenTriggerWords.includes(text?.toLowerCase())
     const img = isFullScreen
       ? useImage(800, 480 - 160)
       : useImage(800 - 400, 480 - 160)
@@ -220,7 +220,7 @@ export async function runDiscordBot() {
 
     fs.writeFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'totd.json'), JSON.stringify(winner)).catch(console.error)
 
-    const isFullScreen = fullscreenTriggerWords.includes(winner.text?.toLowerCase())
+    const isFullScreen = Const.FullscreenTriggerWords.includes(winner.text?.toLowerCase())
     const img = useImage(800 - 400, 480 - 160)
     await img.draw(
       drawQuote(winner, isFullScreen),

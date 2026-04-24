@@ -1,4 +1,4 @@
-import type { Renderer } from "../lib/image"
+import type { Renderer } from "../../lib/image"
 
 
 export function drawClock(): Renderer {

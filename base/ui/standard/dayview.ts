@@ -1,8 +1,8 @@
-import type { WeatherApi } from "../api/weather"
-import { Easings } from "../lib/easings"
-import { icons } from "../lib/icons"
-import type { Renderer } from "../lib/image"
-import type { FillStyle } from "../lib/paint"
+import type { WeatherApi } from "../../api/weather"
+import { Easings } from "../../lib/easings"
+import { icons } from "../../lib/icons"
+import type { Renderer } from "../../lib/image"
+import type { FillStyle } from "../../lib/paint"
 
 
 const firstHour = 6

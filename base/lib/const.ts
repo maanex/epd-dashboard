@@ -11,4 +11,13 @@ export namespace Const {
   export const OpFull = 0b001 // full update
   export const OpPart = 0b010 // partial update
 
+  export const FullscreenTriggerWords = [
+    'fullscreen',
+    'full',
+    'large',
+    'big',
+    'wallpaper',
+    'cover'
+  ]
+
 }
