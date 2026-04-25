@@ -1,9 +1,14 @@
 import type { GCalendarApi } from "../../api/gcalendar"
 import type { Renderer } from "../../lib/image"
+import type { FillStyle } from "../../lib/paint"
 
 
 const firstHour = 6
 const lastHour = 26
+const outerRowHeight = 14
+const rowPadding = 1
+const extraPadding = 1
+const background: FillStyle = 'medium'
 
 export function drawDayevents(calendar: GCalendarApi): Renderer {
   return ({ paint, width, height }) => {
@@ -43,7 +48,13 @@ export function drawDayevents(calendar: GCalendarApi): Renderer {
       }
     })
 
+    paint.newRect()
+      .from(0, 0)
+      .sized(width, extraPadding)
+      .fill(background)
+
     const assignedRows = new Map<number, number>()
+    let currentMaxRow = -1
     for (let i = 0; i < timedEvents.length; i++) {
       let blockedRows = new Set<number>()
       for (let j = 0; j < i; j++) {
@@ -58,16 +69,47 @@ export function drawDayevents(calendar: GCalendarApi): Renderer {
         assignedRow++
       }
       assignedRows.set(i, assignedRow)
+
+      if (assignedRow > currentMaxRow) {
+        currentMaxRow = assignedRow
+        paint.newRect()
+          .from(0, assignedRow * (outerRowHeight + rowPadding) + extraPadding)
+          .sized(width, outerRowHeight + rowPadding)
+          .fill(background)
+      }
+
+      const y = assignedRow * (outerRowHeight + rowPadding) + extraPadding
+      paint.newRect()
+        .from(timedEvents[i].startX - 1, y - 1)
+        .sized(timedEvents[i].endX - timedEvents[i].startX + 1, outerRowHeight + 1)
+        .round(2)
+        .fill('black')
+        .inset(1)
+        .round(1)
+        .fill('white')
+        .useCopy(rect => {
+          const { x, width } = rect.getSize()
+          paint.newBitText(timedEvents[i].summary.toUpperCase())
+            .size(12)
+            .at(x + 2, y + 2)
+            .maxWidth(width - 4)
+            .render('black')
+        })
     }
 
-    for (let i = 0; i < timedEvents.length; i++) {
-      const event = timedEvents[i]
-      const y = assignedRows.get(i)! * 6
-      paint.newRect()
-        .from(event.startX, y)
-        .sized(event.endX - event.startX, 4)
-        .outline('black', 1)
-    }
+    paint.newRect()
+      .from(0, (currentMaxRow + 1) * (outerRowHeight + rowPadding))
+      .sized(width, extraPadding)
+      .fill(background)
+
+    // for (let i = 0; i < timedEvents.length; i++) {
+    //   const event = timedEvents[i]
+    //   const y = assignedRows.get(i)! * 6
+    //   paint.newRect()
+    //     .from(event.startX, y)
+    //     .sized(event.endX - event.startX, 4)
+    //     .outline('black', 1)
+    // }
 
     // return used height!
   }

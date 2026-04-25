@@ -16,7 +16,7 @@ export function drawQuote(content: QuoteContent, fullscreen: boolean): Renderer 
       .fill('white')
 
     if (fullscreen && content.image) {
-      const { dithered } = await loadAndDitherImage(content.image, width, height, 'cover')
+      const { dithered } = await loadAndDitherImage(content.image, width, height, 'cover', 'error-diffusion')
       await drawDitheredImage(dithered, width, height, paint)
     } else {
       const maxWidth = width - padding * 2
@@ -26,7 +26,7 @@ export function drawQuote(content: QuoteContent, fullscreen: boolean): Renderer 
       let contentImage: Buffer | null = null
 
       if (content.image) {
-        const { dithered, width: renderWidth, height: renderHeight } = await loadAndDitherImage(content.image, maxWidth - 3, height - padding*2 - 2)
+        const { dithered, width: renderWidth, height: renderHeight } = await loadAndDitherImage(content.image, maxWidth - 3, height - padding*2 - 2, 'contain', 'error-diffusion')
         contentWidth = renderWidth + 2
         contentHeight = renderHeight + 2
         contentImage = dithered
@@ -88,6 +88,6 @@ export function drawQuote(content: QuoteContent, fullscreen: boolean): Renderer 
 export async function calcQuoteContentWidth(content: QuoteContent, maxWidth: number, height: number) {
   if (!content.image)
     return maxWidth
-  const { width } = await loadAndDitherImage(content.image, maxWidth - 3, height - padding*2)
+  const { width } = await loadAndDitherImage(content.image, maxWidth - 3, height - padding*2, 'contain', 'error-diffusion')
   return Math.min(maxWidth, width + padding * 2)
 }

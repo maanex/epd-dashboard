@@ -18,6 +18,14 @@ const matrixSize = 8
 const matrixScale = 64
 
 
+function clampByte(value: number) {
+  return Math.max(0, Math.min(255, value))
+}
+
+function applyToneScale(value: number, scale: number) {
+  return clampByte(128 + (value - 128) * scale)
+}
+
 export function orderedDither<T extends Buffer | Uint8Array>(imageData: T, width: number, height: number): T {
   const isBuffer = Buffer.isBuffer(imageData)
   for (let y = 0; y < height; y++) {
@@ -40,7 +48,65 @@ export function orderedDither<T extends Buffer | Uint8Array>(imageData: T, width
   return imageData
 }
 
-export async function loadAndDitherImage(url: string, maxWidth: number, maxHeight: number, fit: 'cover' | 'contain' = 'contain') {
+export function errorDiffusionDither<T extends Buffer | Uint8Array>(imageData: T, width: number, height: number, scale = 1): T {
+  const isBuffer = Buffer.isBuffer(imageData)
+  const toneScale = Math.max(0, scale)
+  const pixelCount = width * height
+  const work = new Float32Array(pixelCount)
+
+  if (isBuffer) {
+    for (let i = 0; i < pixelCount; i++) {
+      const src = i * 3
+      work[i] = applyToneScale(
+        0.3 * imageData[src] + 0.59 * imageData[src + 1] + 0.11 * imageData[src + 2],
+        toneScale
+      )
+    }
+  } else {
+    for (let i = 0; i < pixelCount; i++) {
+      work[i] = applyToneScale(imageData[i], toneScale)
+    }
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      const current = work[i]
+      const value = current >= 128 ? 255 : 0
+      const error = current - value
+      work[i] = value
+
+      if (x + 1 < width) {
+        work[i + 1] += error * 7 / 16
+      }
+      if (x - 1 >= 0 && y + 1 < height) {
+        work[i + width - 1] += error * 3 / 16
+      }
+      if (y + 1 < height) {
+        work[i + width] += error * 5 / 16
+      }
+      if (x + 1 < width && y + 1 < height) {
+        work[i + width + 1] += error * 1 / 16
+      }
+    }
+  }
+
+  if (isBuffer) {
+    for (let i = 0; i < pixelCount; i++) {
+      const value = work[i] >= 128 ? 255 : 0
+      const dst = i * 3
+      imageData[dst] = imageData[dst + 1] = imageData[dst + 2] = value
+    }
+  } else {
+    for (let i = 0; i < pixelCount; i++) {
+      imageData[i] = work[i] >= 128 ? 255 : 0
+    }
+  }
+
+  return imageData
+}
+
+export async function loadAndDitherImage(url: string, maxWidth: number, maxHeight: number, fit: 'cover' | 'contain' = 'contain', mode: 'ordered' | 'error-diffusion' = 'ordered') {
   let data: Buffer
   if (!url.startsWith('http')) {
     // local file
@@ -67,7 +133,9 @@ export async function loadAndDitherImage(url: string, maxWidth: number, maxHeigh
     .resize(width, height, { kernel: 'lanczos3', fit: 'cover' })
     .modulate({ brightness: 1.1, saturation: 1.1 })
     .sharpen(1, 1, 3)
-  const dithered = orderedDither(await scaled.removeAlpha().raw().toBuffer(), width, height)
+  const dithered = mode === 'error-diffusion'
+    ? errorDiffusionDither(await scaled.removeAlpha().raw().toBuffer(), width, height)
+    : orderedDither(await scaled.removeAlpha().raw().toBuffer(), width, height)
   return { dithered, width, height }
 }
 

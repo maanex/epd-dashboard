@@ -19,7 +19,7 @@ export async function createAstroFace(opts: {
   localTemperature?: number | string
 }) {
   const dayviewHeight = 100
-  const dayeventsHeight = 30
+  const dayeventsHeight = 70
   const maxHorizontalSplit = 400
   let horizontalSplit = maxHorizontalSplit
   const totdData = opts.quote

@@ -25,7 +25,7 @@ GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Not
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
 
-const dummy = true
+const dummy = !true
 
 
 // Initialize APIs and load data
@@ -74,7 +74,8 @@ function getSleepMinutes() {
 // Rendering!
 async function drawScreen(opts: {
   localTemperature?: number | string,
-  totdOverride?: Record<string, any>
+  totdOverride?: Record<string, any>,
+  faceOverride?: string,
 }) {
   await weather.assertRecentData().catch(consola.error)
   await calendar.assertRecentData().catch(consola.error)
@@ -92,8 +93,11 @@ async function drawScreen(opts: {
     }
   }
 
-  // return createStandardFace({
-  return createAstroFace({
+  let face = createAstroFace
+  if (opts.faceOverride === 'standard')
+    face = createStandardFace
+
+  return face({
     weather,
     calendar,
     holidays,
@@ -191,7 +195,8 @@ app.get('/', async (req, res) => {
     totdOverride: {
       text: req.query.text !== undefined ? String(req.query.text) : undefined,
       image: req.query.image !== undefined ? String(req.query.image) : undefined
-    }
+    },
+    faceOverride: req.query.face ? String(req.query.face) : undefined
   })
   const imgBuffer = await img.exportFullBw()
   consola.info(`Completed in ${Date.now() - start}ms`)
