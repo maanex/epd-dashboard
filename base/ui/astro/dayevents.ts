@@ -1,4 +1,5 @@
 import type { GCalendarApi } from "../../api/gcalendar"
+import { cFont } from "../../lib/c-font"
 import type { Renderer } from "../../lib/image"
 import type { FillStyle } from "../../lib/paint"
 
@@ -7,8 +8,8 @@ const firstHour = 6
 const lastHour = 26
 const outerRowHeight = 14
 const rowPadding = 1
-const extraPadding = 1
-const background: FillStyle = 'medium'
+const extraPadding = 2
+const background: FillStyle = 'lightest-shade'
 
 export function drawDayevents(calendar: GCalendarApi): Renderer {
   return ({ paint, width, height }) => {
@@ -41,10 +42,13 @@ export function drawDayevents(calendar: GCalendarApi): Renderer {
       const startX = Math.round((startHour - firstHour) * hourWidth)
       const endX = Math.round((endHour - firstHour) * hourWidth)
 
+      const summaryWidth = event.summary.split('').filter(c => c in cFont.f12).join('').trim().length * 7 + 5 // 5 padding
+
       return {
         ...event,
         startX,
-        endX
+        endX,
+        summaryWidth
       }
     })
 
@@ -59,7 +63,7 @@ export function drawDayevents(calendar: GCalendarApi): Renderer {
       let blockedRows = new Set<number>()
       for (let j = 0; j < i; j++) {
         const other = timedEvents[j]
-        if (other.endX > timedEvents[i].startX && other.startX < timedEvents[i].endX) {
+        if (other.endX + other.summaryWidth > timedEvents[i].startX && other.startX < timedEvents[i].endX + timedEvents[i].summaryWidth) {
           const assignedRow = assignedRows.get(j) ?? -1
           blockedRows.add(assignedRow)
         }
@@ -79,38 +83,70 @@ export function drawDayevents(calendar: GCalendarApi): Renderer {
       }
 
       const y = assignedRow * (outerRowHeight + rowPadding) + extraPadding
+      const outerBoxWidth = timedEvents[i].endX - timedEvents[i].startX
+      const innerBoxWidth = Math.max(outerBoxWidth - 2, 0)
+
       paint.newRect()
         .from(timedEvents[i].startX - 1, y - 1)
-        .sized(timedEvents[i].endX - timedEvents[i].startX + 1, outerRowHeight + 1)
-        .round(2)
+        .sized(outerBoxWidth + timedEvents[i].summaryWidth + 1, outerRowHeight + 1)
+        .round(3)
+        .fill('white')
+      paint.newRect()
+        .from(timedEvents[i].startX + 4, y + outerRowHeight - 1)
+        .sized(outerBoxWidth + timedEvents[i].summaryWidth - 5, 1)
+        .fill('black')
+
+      paint.newRect()
+        .from(timedEvents[i].startX - 1, y - 1)
+        .sized(outerBoxWidth + 1, outerRowHeight + 1)
+        .round(3)
         .fill('black')
         .inset(1)
-        .round(1)
-        .fill('white')
-        .useCopy(rect => {
-          const { x, width } = rect.getSize()
-          paint.newBitText(timedEvents[i].summary.toUpperCase())
-            .size(12)
-            .at(x + 2, y + 2)
-            .maxWidth(width - 4)
-            .render('black')
-        })
+        .round(2)
+        .fill(timedEvents[i].end.getTime() < Date.now() ? 'white' : 'black')
+
+      const start = timedEvents[i].start
+      const end = timedEvents[i].end
+      const timeString = (end.getTime() - start.getTime() <= 30 * 60 * 1000)
+        ? ` `
+        : (end.getTime() - start.getTime() < 2 * 60 * 60 * 1000)
+          ? `${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')}`
+          : `${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')}-${end.getHours()}:${end.getMinutes().toString().padStart(2, '0')}`
+
+      const balanceXOffset = (innerBoxWidth - timeString.length * 7) >= 2 ? 1 : 0
+      paint.newBitText(timeString)
+        .size(12)
+        .at(timedEvents[i].startX + balanceXOffset + 1, y + 2)
+        .maxWidth(innerBoxWidth - balanceXOffset * 2)
+        .render('black', 'invert')
+
+      paint.newBitText(timedEvents[i].summary)
+        .size(12)
+        .at(timedEvents[i].endX + 2, y + 2)
+        .render('black')
+    }
+
+    if (currentMaxRow === -1) {
+      currentMaxRow = 0
+      paint.newRect()
+        .from(0, extraPadding)
+        .sized(width, outerRowHeight + rowPadding)
+        .fill(background)
     }
 
     paint.newRect()
-      .from(0, (currentMaxRow + 1) * (outerRowHeight + rowPadding))
+      .from(0, (currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding - 1)
       .sized(width, extraPadding)
       .fill(background)
 
-    // for (let i = 0; i < timedEvents.length; i++) {
-    //   const event = timedEvents[i]
-    //   const y = assignedRows.get(i)! * 6
-    //   paint.newRect()
-    //     .from(event.startX, y)
-    //     .sized(event.endX - event.startX, 4)
-    //     .outline('black', 1)
-    // }
+    paint.newRect()
+      .from(0, (currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding + 1)
+      .sized(width, 2)
+      .fill('black')
 
-    // return used height!
+    const usedHeight = (currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding + 2
+    return {
+      usedHeight
+    }
   }
 }
