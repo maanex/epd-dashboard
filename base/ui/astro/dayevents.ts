@@ -11,7 +11,7 @@ const rowPadding = 1
 const extraPadding = 2
 const background: FillStyle = 'lightest-shade'
 
-export function drawDayevents(calendar: GCalendarApi): Renderer {
+export function drawDayevents(calendar: GCalendarApi): Renderer<{ usedHeight: number }> {
   return ({ paint, width, height }) => {
     const hourCount = (lastHour - firstHour)
     const hourWidth = width / hourCount
@@ -144,7 +144,8 @@ export function drawDayevents(calendar: GCalendarApi): Renderer {
       .sized(width, 2)
       .fill('black')
 
-    const usedHeight = (currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding + 2
+    const usedHeight = (currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding + 2 + 1
+
     return {
       usedHeight
     }

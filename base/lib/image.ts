@@ -15,12 +15,17 @@ export const Color = {
 }
 export type Color = keyof typeof Color
 
-export type Renderer = (img: {
+export type RenderReturn = void | {
+  usedWidth?: number
+  usedHeight?: number
+}
+
+export type Renderer <Return extends RenderReturn> = (img: {
   ctx: SKRSContext2D
   paint: ReturnType<typeof usePaint>
   width: number
   height: number
-}) => void | Promise<void>
+}) => Return | Promise<Return>
 
 export const useImage = (ScreenWidth = Const.ScreenWidth, ScreenHeight = Const.ScreenHeight) => {
   const canvas = createCanvas(ScreenWidth, ScreenHeight)
@@ -29,10 +34,11 @@ export const useImage = (ScreenWidth = Const.ScreenWidth, ScreenHeight = Const.S
   ctx.fillStyle = 'white'
   ctx.fillRect(0, 0, ScreenWidth, ScreenHeight)
 
-  async function draw(renderer: Renderer, frameX?: number, frameY?: number, frameWidth?: number, frameHeight?: number) {
+  async function draw<Return extends RenderReturn>(renderer: Renderer<Return>, frameX?: number, frameY?: number, frameWidth?: number, frameHeight?: number) {
     const paint = usePaint(ctx, frameX, frameY, frameWidth, frameHeight)
+    let returnValue: Return = undefined as any
     try {
-      await renderer({
+      returnValue = await renderer({
         ctx,
         paint,
         width: frameWidth ?? ScreenWidth,
@@ -56,6 +62,7 @@ export const useImage = (ScreenWidth = Const.ScreenWidth, ScreenHeight = Const.S
         .render('white')
     }
     paint.render(true)
+    return returnValue
   }
 
   /** render full as black and white, 1 bit per pixel */

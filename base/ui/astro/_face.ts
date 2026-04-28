@@ -19,7 +19,7 @@ export async function createAstroFace(opts: {
   localTemperature?: number | string
 }) {
   const dayviewHeight = 100
-  const dayeventsHeight = 70
+  const dayeventsMaxHeight = 70
   const maxHorizontalSplit = 400
   let horizontalSplit = maxHorizontalSplit
   const totdData = opts.quote
@@ -31,11 +31,11 @@ export async function createAstroFace(opts: {
     0, 0,
     Const.ScreenWidth, dayviewHeight
   )
-  await img.draw(
+  const { usedHeight: dayeventsHeight } = await img.draw(
     drawDayevents(opts.calendar),
     0, dayviewHeight,
-    Const.ScreenWidth, dayeventsHeight
-  )
+    Const.ScreenWidth, dayeventsMaxHeight
+  ) || { usedHeight: dayeventsMaxHeight }
 
   const dayHeight = dayviewHeight + dayeventsHeight
 
