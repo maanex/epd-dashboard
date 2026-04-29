@@ -18,6 +18,7 @@ type RectPaint = {
   fill: (style: FillStyle, mix?: MixMode) => RectPaint
   outline: (style: FillStyle, width: number, mix?: MixMode) => RectPaint
   useCopy: (fn: (rect: RectPaint) => any) => RectPaint
+  breakIf: (condition: boolean) => RectPaint
   getSize: () => { x: number, y: number, width: number, height: number }
 }
 
@@ -125,6 +126,14 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
         return out
       },
       sized: (width: number | null, height: number | null) => {
+        if ((width ?? 0) < 0) {
+          width = -width!
+          rect.x -= width!
+        }
+        if ((height ?? 0) < 0) {
+          height = -height!
+          rect.y -= height!
+        }
         rect.w = width === null ? rect.w : ~~width
         rect.h = height === null ? rect.h : ~~height
         return out
@@ -175,6 +184,25 @@ export const usePaint = (ctx: SKRSContext2D, startX = 0, startY = 0, screenWidth
       useCopy: (fn: (rect: ReturnType<typeof newRect>) => any) => {
         fn(newRect(rect.x, rect.y, rect.w, rect.h, rect.br))
         return out
+      },
+      breakIf: (condition: boolean) => {
+        if (!condition)
+          return out
+
+        const dummy: RectPaint = {
+          from: () => dummy,
+          sized: () => dummy,
+          to: () => dummy,
+          translate: () => dummy,
+          inset: () => dummy,
+          round: () => dummy,
+          fill: () => dummy,
+          outline: () => dummy,
+          useCopy: () => dummy,
+          breakIf: () => dummy,
+          getSize: () => ({ x: rect.x, y: rect.y, width: rect.w, height: rect.h })
+        }
+        return dummy
       },
       getSize: () => ({ x: rect.x, y: rect.y, width: rect.w, height: rect.h })
     }

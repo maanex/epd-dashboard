@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div class="inner">
+    <img src="http://localhost:3034/?face=standard&temp=21&text=fullscreen" class="full original">
+    <img src="http://localhost:3034/?face=standard&temp=21&text=foobar" class="side original">
+    <img src="http://localhost:3034/?face=standard&temp=21&text=Lorem%20ipsum%20dolor%20sit%20amet%20consectetur,%20adipisicing%20elit.%20Facilis%20sapiente%20voluptatem%20eligendi%20maiores%20voluptatibus%20laudantium%20ullam,%20nobis%20hic%20suscipit%20velit.&image=" class="text original">
+    <div class="smalls">
+      <img src="http://localhost:3034/?face=standard&temp=21&text=fullscreen" class="full small">
+      <img src="http://localhost:3034/?face=standard&temp=21&text=foobar" class="side small">
+      <img src="http://localhost:3034/?face=standard&temp=21&text=Lorem%20ipsum%20dolor%20sit%20amet%20consectetur,%20adipisicing%20elit.%20Facilis%20sapiente%20voluptatem%20eligendi%20maiores%20voluptatibus%20laudantium%20ullam,%20nobis%20hic%20suscipit%20velit.&image=" class="text small">
+    </div>
+  </div>
+</body>
+<style>
+body {
+  background-color: black;
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+}
+
+.inner, .smalls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: 10px;
+}
+
+.smalls {
+  gap: 5px;
+}
+
+.small {
+  width: 400px;
+}
+</style>
+</html>

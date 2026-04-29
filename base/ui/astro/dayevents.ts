@@ -11,7 +11,7 @@ const rowPadding = 1
 const extraPadding = 2
 const background: FillStyle = 'lightest-shade'
 
-export function drawDayevents(calendar: GCalendarApi): Renderer<{ usedHeight: number }> {
+export function drawDayevents(calendar: GCalendarApi, flip: boolean): Renderer<{ usedHeight: number }> {
   return ({ paint, width, height }) => {
     const hourCount = (lastHour - firstHour)
     const hourWidth = width / hourCount
@@ -52,9 +52,12 @@ export function drawDayevents(calendar: GCalendarApi): Renderer<{ usedHeight: nu
       }
     })
 
+    const direction = flip ? -1 : 1
+    const hMinus = (y: number) => flip ? height - y : y
+
     paint.newRect()
-      .from(0, 0)
-      .sized(width, extraPadding)
+      .from(0, flip ? height : 0)
+      .sized(width, extraPadding * direction)
       .fill(background)
 
     const assignedRows = new Map<number, number>()
@@ -77,12 +80,12 @@ export function drawDayevents(calendar: GCalendarApi): Renderer<{ usedHeight: nu
       if (assignedRow > currentMaxRow) {
         currentMaxRow = assignedRow
         paint.newRect()
-          .from(0, assignedRow * (outerRowHeight + rowPadding) + extraPadding)
-          .sized(width, outerRowHeight + rowPadding)
+          .from(0, hMinus(assignedRow * (outerRowHeight + rowPadding) + extraPadding))
+          .sized(width, (outerRowHeight + rowPadding) * direction)
           .fill(background)
       }
 
-      const y = assignedRow * (outerRowHeight + rowPadding) + extraPadding
+      const y = hMinus(assignedRow * (outerRowHeight + rowPadding) + extraPadding) - (flip ? outerRowHeight : 0)
       const outerBoxWidth = timedEvents[i].endX - timedEvents[i].startX
       const innerBoxWidth = Math.max(outerBoxWidth - 2, 0)
 
@@ -90,11 +93,13 @@ export function drawDayevents(calendar: GCalendarApi): Renderer<{ usedHeight: nu
         .from(timedEvents[i].startX - 1, y - 1)
         .sized(outerBoxWidth + timedEvents[i].summaryWidth + 1, outerRowHeight + 1)
         .round(3)
+        // .fill('light-shade')
+        // .inset(1)
         .fill('white')
-      paint.newRect()
-        .from(timedEvents[i].startX + 4, y + outerRowHeight - 1)
-        .sized(outerBoxWidth + timedEvents[i].summaryWidth - 5, 1)
-        .fill('black')
+      // paint.newRect()
+      //   .from(timedEvents[i].startX + 4, y + outerRowHeight - 1)
+      //   .sized(outerBoxWidth + timedEvents[i].summaryWidth - 5, 1)
+      //   .fill('black')
 
       paint.newRect()
         .from(timedEvents[i].startX - 1, y - 1)
@@ -129,22 +134,17 @@ export function drawDayevents(calendar: GCalendarApi): Renderer<{ usedHeight: nu
     if (currentMaxRow === -1) {
       currentMaxRow = 0
       paint.newRect()
-        .from(0, extraPadding)
-        .sized(width, outerRowHeight + rowPadding)
+        .from(0, hMinus(extraPadding))
+        .sized(width, (outerRowHeight + rowPadding) * direction)
         .fill(background)
     }
 
     paint.newRect()
-      .from(0, (currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding - 1)
-      .sized(width, extraPadding)
+      .from(0, hMinus((currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding - 1))
+      .sized(width, extraPadding * direction)
       .fill(background)
 
-    paint.newRect()
-      .from(0, (currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding + 1)
-      .sized(width, 2)
-      .fill('black')
-
-    const usedHeight = (currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding + 2 + 1
+    const usedHeight = (currentMaxRow + 1) * (outerRowHeight + rowPadding) + extraPadding + 1
 
     return {
       usedHeight

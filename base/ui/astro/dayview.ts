@@ -43,7 +43,7 @@ function sampleCatmullRom(values: number[], t: number): number {
   )
 }
 
-export function drawDayview(weather: WeatherApi): Renderer {
+export function drawDayview(weather: WeatherApi): Renderer<void> {
   return ({ paint, width, height }) => {
     const hourCount = (lastHour - firstHour)
 
@@ -184,7 +184,8 @@ export function drawDayview(weather: WeatherApi): Renderer {
       const rainTop = Math.max(0, Math.min(height - 1, Math.round(rainTopYs[xi])))
       for (let yi = rainTop; yi < height; yi++)
         paint.setPixel(xi, yi, 0)
-      paint.setPixel(xi, rainTop, 1)
+      if (rainTop !== height - 1)
+        paint.setPixel(xi, rainTop, 1)
     }
 
     // Two passes for temperature (white outline and black inner)
@@ -294,8 +295,5 @@ export function drawDayview(weather: WeatherApi): Renderer {
         )
         .render('black', 'invert')
     }
-
-    paint.newRect(0, height-2, width, 2)
-      .fill('black')
   }
 }
