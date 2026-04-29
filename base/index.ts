@@ -17,6 +17,7 @@ import https from 'https'
 import { createStandardFace } from './ui/standard/_face'
 import { createAstroFace } from './ui/astro/_face'
 import { useWeatherDummy } from './api/weather-dummy'
+import { useGCalendarDummy } from './api/gcalendar-dummy'
 
 
 // Register global fonts
@@ -25,7 +26,7 @@ GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Not
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
 
-const dummy = !true
+const dummy = true
 
 
 // Initialize APIs and load data
@@ -36,10 +37,13 @@ const weather = dummy
 consola.success('Weather loaded')
 
 consola.start('Loading gCalendar')
-const calendar = await useGCalendarApi({
-  // dummy,
-  blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
-})
+const calendar = dummy
+  ? await useGCalendarDummy({
+      blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
+    })
+  : await useGCalendarApi({
+      blacklist: [ /@group\.v\.calendar\.google\.com$/gi ]
+    })
 consola.success('gCalendar loaded')
 
 consola.start('Loading holidays')

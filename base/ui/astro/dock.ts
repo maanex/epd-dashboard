@@ -44,7 +44,7 @@ const weatherCodeIcons: Record<number, number[]> = {
 
 const weekdayShort = [ 'SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA' ]
 
-export function drawDock(weather: WeatherApi, holidays: HolidaysApi, localTemperature?: number | string): Renderer {
+export function drawDock(weather: WeatherApi, holidays: HolidaysApi, localTemperature?: number | string): Renderer<void> {
   return ({ paint, width, height }) => {
     paint.newRect(0, 0, width, height)
       .fill('medium')

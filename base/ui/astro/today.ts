@@ -47,11 +47,11 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
     } satisfies Badge
   }))
 
-  let y = padding + 32
-
   const badgeInset = 5
   const badgePadding = 5
   const colorStripWidth = 6
+
+  let y = padding + 32 + badgePadding
 
   let currentX = padding
   let addY = 0
@@ -70,12 +70,12 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       addY = 0
     }
 
-    console.log(badge.color)
     paint.newRect(currentX, y, badgeWidth, badgeHeight)
-      .round(2)
-      .inset(-1)
+      .round(4)
+      .inset(-2)
       .fill('white')
-      .inset(1)
+      .round(2)
+      .inset(2)
       .useCopy(r => !asOverlay && r
         .translate(3, 3)
         .fill('light', 'darken')
