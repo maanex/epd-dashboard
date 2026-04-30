@@ -22,7 +22,7 @@ function createFetchHook<T>(url: string, ttl: number) {
 }
 
 export const useVaultApi = async () => {
-  const getBirthdays = createFetchHook<Array<[ name: string, age: number ]>>('/birthdays/05-21', 1000 * 60 * 60)
+  const getBirthdays = createFetchHook<Array<[ name: string, age: number ]>>('/birthdays', 1000 * 60 * 60)
 
   return {
     getBirthdays
