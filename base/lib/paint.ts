@@ -4,7 +4,7 @@ import { cFont } from "./c-font"
 import * as qrcode from 'qrcode'
 
 
-export type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black' | 'checker' | 'dark-shade' | 'light-shade' | 'lighter-shade' | 'lightest-shade'
+export type FillStyle = 'white' | 'lightest' | 'lighter' | 'light' | 'medium' | 'dark' | 'black' | 'checker' | 'dark-shade' | 'light-shade' | 'lighter-shade' | 'lightest-shade' | 'big-waves' | 'test'
 export type MixMode = 'default' | 'darken' | 'lighten' | 'invert'
 
 
@@ -44,6 +44,8 @@ function rasterize(style: FillStyle, x: number, y: number) {
   if (style === 'light-shade') return ((x + y) % 3) === 0 ? 0 : 1
   if (style === 'lighter-shade') return ((x + y) % 4) === 0 ? 0 : 1
   if (style === 'lightest-shade') return ((x + y) % 5) === 0 ? 0 : 1
+  if (style === 'big-waves') return Math.sin(x * 0.04*4 + Math.sin(y * 0.05*4) * 4) + Math.cos(y * 0.04*4 + Math.cos(x * 0.05*4) * 4) > 0 ? 1 : 0
+  if (style === 'test') return Math.sin(x * (y**0.981)) > Math.cos(y * (x**1.03)) ? (Math.cos(x*1.2*y) < Math.sin(x/y*4.1511) ? 1 : 0) : (Math.sin(y/x*0.13) > Math.cos(y*x*1.31) ? 0 : 1)
   return 0
 }
 

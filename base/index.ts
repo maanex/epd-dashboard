@@ -18,6 +18,8 @@ import { createStandardFace } from './ui/standard/_face'
 import { createAstroFace } from './ui/astro/_face'
 import { useWeatherDummy } from './api/weather-dummy'
 import { useGCalendarDummy } from './api/gcalendar-dummy'
+import { useVaultApi } from './api/vault'
+import { useVaultDummy } from './api/vault-dummy'
 
 
 // Register global fonts
@@ -55,6 +57,10 @@ const disco = await runDiscordBot({
   dummy
 })
 consola.success('Discord bot started')
+
+const vault = dummy
+  ? await useVaultDummy()
+  : await useVaultApi()
 
 
 // Eepy???
@@ -105,6 +111,7 @@ async function drawScreen(opts: {
     weather,
     calendar,
     holidays,
+    vault,
     quote: totdData,
     localTemperature: opts.localTemperature
   })

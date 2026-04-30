@@ -3,10 +3,10 @@ import type { FillStyle } from "../../lib/paint"
 import { getDayLength } from "../../lib/sun-position"
 
 
-export function fillBlack(): Renderer<void> {
+export function fillBlack(style: FillStyle = 'black'): Renderer<void> {
   return async ({ paint, width, height }) => {
     paint.newRect(0, 0, width, height)
-      .fill('black')
+      .fill(style)
   }
 }
 
