@@ -16,8 +16,7 @@ export function drawDayevents(calendar: GCalendarApi, flip: boolean): Renderer<{
     const hourCount = (lastHour - firstHour)
     const hourWidth = width / hourCount
 
-    // const almostToday = new Date(Date.now() - 2 * 60 * 60 * 1000)
-    const almostToday = new Date(Date.now())
+    const almostToday = new Date(Date.now() - 2 * 60 * 60 * 1000)
     almostToday.setHours(firstHour, 0, 0, 0)
     const minimumTime = almostToday.getTime()
     const maximumTime = minimumTime + (lastHour - firstHour) * 60 * 60 * 1000
@@ -42,10 +41,12 @@ export function drawDayevents(calendar: GCalendarApi, flip: boolean): Renderer<{
       const startX = Math.round((startHour - firstHour) * hourWidth)
       const endX = Math.round((endHour - firstHour) * hourWidth)
 
-      const summaryWidth = event.summary.split('').filter(c => c in cFont.f12).join('').trim().length * 7 + 5 // 5 padding
+      const summaryBittext = event.summary.split('').filter(c => c in cFont.f12).join('').trim()
+      const summaryWidth = summaryBittext.length * 7 + 5 // 5 padding
 
       return {
         ...event,
+        summaryBittext,
         startX,
         endX,
         summaryWidth

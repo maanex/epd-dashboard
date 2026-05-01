@@ -1,6 +1,7 @@
+import consola from "consola"
 
 
-const baseUrl = 'http://localhost:3000/api'
+const baseUrl = 'http://localhost:3063/api'
 
 function createFetchHook<T>(url: string, ttl: number) {
   let cache: T | null = null
@@ -8,7 +9,11 @@ function createFetchHook<T>(url: string, ttl: number) {
 
   async function fetchData() {
     const response = await fetch(baseUrl + url)
-    const data = await response.json()
+      .catch(err => {
+        consola.error(`Error fetching ${url}:`, err)
+        return null
+      })
+    const data = await response?.json() ?? []
     cache = data
     lastFetch = Date.now()
     return data as T

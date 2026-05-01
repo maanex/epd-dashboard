@@ -1,21 +1,19 @@
 import type { GCalendarApi } from "../../api/gcalendar"
+import { cFont } from "../../lib/c-font"
 import { DatetimeUtils } from "../../lib/datetime-utils"
 import type { Renderer } from "../../lib/image"
 import type { FillStyle, usePaint } from "../../lib/paint"
-import { calendarIdToFillStyle, hexToFillStyle } from "./utils"
+import { calendarIdToFillStyle } from "./utils"
 
 
 const defaultTaskListName = 'Meine Aufgaben'
-const hsplit = 0.6
-const maxAgendaWidth = 220
-const maxTasksWidth = 180
 
 export type Badge = {
   text: string
   color: FillStyle | null
 }
 
-function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnType<typeof usePaint>, width: number, height: number, asOverlay: boolean, badges: Badge[]) {
+function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnType<typeof usePaint>, width: number, height: number, asOverlay: boolean, badges: Badge[], xConnecting: boolean) {
   const padding = 15
   const maxWidth = width - padding * 2
 
@@ -110,6 +108,7 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
   endOfToday.setHours(23, 59, 59, 999)
 
   let previousWasHighlighted = false
+  let previousWidth = 0
 
   y += padding
 
@@ -117,22 +116,31 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
     const task = calendar.tasks[i]
     if (!task) break
 
+    const isInDefaultList = task.partOf.title === defaultTaskListName
+    const taskTitle = (isInDefaultList ? '' : `${task.partOf.title!}: `) + (task.title ?? '(mystery task)')
+    let currentWidth = Math.min(maxWidth - 18, taskTitle.length * cFont.f12.width)
+
     if (task.due && new Date(task.due).getTime() < endOfToday.getTime()) {
       previousWasHighlighted = true
     } else if (previousWasHighlighted) {
       y += 5
+      const x = xConnecting ? 0 : padding
+      const w = xConnecting
+        ? width
+        : asOverlay
+          ? Math.max(previousWidth, currentWidth) + 20
+          : width - padding
+
       if (asOverlay) {
-      paint.newRect(padding, y, maxTasksWidth - padding - 1, 1)
-        .inset(-2)
-        .fill('white')
+        paint.newRect(x, y, w - 1, 1)
+          .inset(-2)
+          .fill('white')
       }
-      paint.newRect(padding, y, maxTasksWidth - padding, 1)
+      paint.newRect(x, y, w, 1)
         .fill('medium')
       y += 15
       previousWasHighlighted = false
     }
-
-    const isInDefaultList = task.partOf.title === defaultTaskListName
 
     const dueText = task.due
       ? `> ${DatetimeUtils.renderDayDelta(new Date(task.due))}`
@@ -141,7 +149,7 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       ? paint.newBitText(dueText).size(8).toRect().getSize().height + 2
       : 0
 
-    const textTask = paint.newBitText((isInDefaultList ? '' : `${task.partOf.title!}: `) + (task.title ?? '(mystery task)'))
+    const textTask = paint.newBitText(taskTitle)
       .at(padding + 18, y)
       .size(12)
       .maxWidth(maxWidth - 18)
@@ -162,6 +170,7 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
       .fill('white')
 
     y += textTask.toRect().getSize().height
+    previousWidth = currentWidth
 
     if (task.due) {
       const textDate = paint.newBitText(dueText)
@@ -191,7 +200,7 @@ function drawQRCode(calendarApi: GCalendarApi, paint: ReturnType<typeof usePaint
     .render('black')
 }
 
-export function drawToday(calendarApi: GCalendarApi, asOverlay: boolean, badges: Badge[]): Renderer<void> {
+export function drawToday(calendarApi: GCalendarApi, asOverlay: boolean, badges: Badge[], xConnecting: boolean): Renderer<void> {
   return ({ paint, width, height }) => {
     if (calendarApi.isSignedOut) {
       drawQRCode(calendarApi, paint, width, height)
@@ -204,14 +213,6 @@ export function drawToday(calendarApi: GCalendarApi, asOverlay: boolean, badges:
     }
 
     const calendar = calendarApi.getData()
-    if (calendar.tasks.length) {
-      const agendaWidth = Math.min(Math.floor(width * hsplit), maxAgendaWidth)
-      drawAgenda(calendar, paint, agendaWidth, height, asOverlay, badges)
-      const tasksPotentialWidth = Math.ceil(width * (1 - hsplit))
-      const tasksActualWidth = Math.min(tasksPotentialWidth, maxTasksWidth)
-      paint.transform(width - tasksActualWidth - (asOverlay ? 5 : 0), 0)
-    } else {
-      drawAgenda(calendar, paint, Math.min(width, maxAgendaWidth), height, asOverlay, badges)
-    }
+    drawAgenda(calendar, paint, width, height, asOverlay, badges, xConnecting)
   }
 }

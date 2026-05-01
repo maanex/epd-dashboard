@@ -1,6 +1,6 @@
 import { useImage } from '../../lib/image'
 import { drawDayview } from './dayview'
-import { calcQuoteContentWidth, drawQuote, type QuoteContent } from './quote'
+import { calcQuoteContentSize, drawQuote, type QuoteContent } from './quote'
 import { drawToday, type Badge } from './today'
 import { Const } from '../../lib/const'
 import type { WeatherApi } from '../../api/weather'
@@ -9,6 +9,7 @@ import type { HolidaysApi } from '../../api/holidays'
 import { drawDayevents } from './dayevents'
 import { fillBlack, getDayLengthMetrics } from './utils'
 import type { VaultApi } from '../../api/vault'
+import { drawUpcoming } from './upcoming'
 
 
 
@@ -23,8 +24,9 @@ export async function createAstroFace(opts: {
   const hLineHeight = 2
   const dayviewHeight = 100
   const dayeventsMaxHeight = 70
-  const maxHorizontalSplit = 400
-  let horizontalSplit = maxHorizontalSplit
+  const widthsFullscreenTotd = [ 300, 0, 300 ]
+  const widhtsInlineTotd = [ 200, 400, 200 ]
+
   const totdData = opts.quote
 
   const img = useImage()
@@ -54,6 +56,8 @@ export async function createAstroFace(opts: {
   const dayHeight = dayviewHeight + dayeventsHeight + hLineHeight * 2
 
   const totdFullscreen = Boolean(totdData && totdData.image && Const.FullscreenTriggerWords.includes(totdData.text?.toLowerCase() ?? ''))
+  let [ widthToday, widthQuote, widthUpcoming ] = totdFullscreen ? widthsFullscreenTotd : widhtsInlineTotd
+
   if (totdData) {
     if (totdFullscreen) {
       await img.draw(
@@ -62,16 +66,16 @@ export async function createAstroFace(opts: {
         Const.ScreenWidth, Const.ScreenHeight - dayHeight
       )
     } else {
-      await img.draw(
+      const quoteX = widthToday + (widthQuote - widthQuote) / 2
+      const { usedWidth } = await img.draw(
         drawQuote(totdData, false),
-        maxHorizontalSplit, 0,
-        Const.ScreenWidth - maxHorizontalSplit, Const.ScreenHeight - dayHeight
+        quoteX, 0,
+        widthQuote, Const.ScreenHeight - dayHeight
       )
-      horizontalSplit = Const.ScreenWidth - await calcQuoteContentWidth(
-        totdData,
-        Const.ScreenWidth - maxHorizontalSplit,
-        Const.ScreenHeight - dayHeight
-      )
+      const extraSpace = widthQuote - usedWidth
+      widthQuote = usedWidth
+      widthToday = Math.min(Math.floor(widthToday + extraSpace / 2), widthsFullscreenTotd[0])
+      widthUpcoming = Math.min(Math.floor(widthUpcoming + extraSpace / 2), widthsFullscreenTotd[2])
     }
   }
 
@@ -99,9 +103,15 @@ export async function createAstroFace(opts: {
   } satisfies Badge)))
 
   img.draw(
-    drawToday(opts.calendar, totdFullscreen, badges),
+    drawToday(opts.calendar, totdFullscreen, badges, (totdData && !totdData.image) || (widthToday < widthsFullscreenTotd[0])),
     0, 0,
-    totdFullscreen ? Const.ScreenWidth : horizontalSplit, Const.ScreenHeight - dayHeight
+    widthToday, Const.ScreenHeight - dayHeight
+  )
+
+  img.draw(
+    drawUpcoming(opts.calendar, opts.holidays, opts.weather, totdFullscreen),
+    Const.ScreenWidth - widthUpcoming, 0,
+    widthUpcoming, Const.ScreenHeight - dayHeight
   )
 
   return img
