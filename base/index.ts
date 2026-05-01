@@ -28,7 +28,7 @@ GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Not
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings12-Regular.ttf'), 'Yarndings12')
 GlobalFonts.registerFromPath(path.join(import.meta.dirname, '..', 'assets', 'Yarndings20-Regular.ttf'), 'Yarndings20')
 
-const dummy = true
+const dummy = !true
 
 
 // Initialize APIs and load data

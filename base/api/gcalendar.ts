@@ -169,9 +169,10 @@ async function createGapiClient() {
       try {
         const currentRaw = await fs.readFile(TOKEN_PATH, 'utf8')
         const currentJson = JSON.parse(currentRaw)
-        for (const key in tokens)
-          currentJson[key] = tokens[key as keyof typeof tokens]
-        await fs.writeFile(TOKEN_PATH, JSON.stringify(currentJson))
+        const updated = { ...currentJson, ...tokens }
+        if (!updated.refresh_token && currentJson.refresh_token)
+          updated.refresh_token = currentJson.refresh_token
+        await fs.writeFile(TOKEN_PATH, JSON.stringify(updated))
       } catch {
         await fs.writeFile(TOKEN_PATH, JSON.stringify(tokens))
       }
