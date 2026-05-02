@@ -82,8 +82,9 @@ export async function createAstroFace(opts: {
   // Local temperature
   const badges: Badge[] = []
   if (opts.localTemperature) {
+    const rounded = Math.round(typeof opts.localTemperature === 'string' ? parseFloat(opts.localTemperature) : opts.localTemperature)
     badges.push({
-      text: `${opts.localTemperature}°`,
+      text: `${rounded}°`,
       color: null
     })
   }
