@@ -1,10 +1,10 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { BaseGuildTextChannel, ChannelType, Client, Events, GatewayIntentBits, TextChannel, type GuildTextBasedChannel, type GuildTextChannelResolvable, type TextThreadChannel } from 'discord.js'
+import { BaseGuildTextChannel, ChannelType, Client, Events, GatewayIntentBits, TextChannel } from 'discord.js'
 import { schedule } from 'node-cron'
 import consola from 'consola'
 import { useImage } from '../lib/image'
-import { drawQuote } from '../ui/standard/quote'
+import { drawQuote } from '../ui/astro/quote'
 import axios from 'axios'
 import { Const } from '../lib/const'
 
@@ -285,14 +285,17 @@ export async function runDiscordBot(opts?: { dummy?: boolean }) {
     if (reaction.message.channelId !== channel)
       return
 
-    if (reaction.emoji.name === '👎' && reaction.message.author.id === user.id)
-      reaction.message.delete().catch(console.error)
+    if (reaction.emoji.name === '👎' && reaction.message.content?.includes(user.id)) {
+      await reaction.message.react('🖕')
+      await new Promise(resolve => setTimeout(resolve, 500 * Math.random()))
+      await reaction.message.delete().catch(console.error)
+    }
   })
 
   client.on(Events.InteractionCreate, int => Promise.try(async () => {
     if (int.isRepliable()) {
       int.reply({
-        content: 'Thank you for your interest!\n\nI (<@1072591753854586900>) have this dashboard thing in my room, see https://discord.com/channels/1338149752671572039/1338153124270968923/1391773929776873605. On this image there\'s a silly cat on the right. Do you see it? Now here\'s the fun part: it\'s no longer the cat. Well. Unless you want it to. You can upload anything and everything into this channel to suggest it. Can be any image or just text as well! Then in the night the thing with the most upvotes gets picked as the image for the next day. So post your things and upvote cool things! And I will have to endure them the whole day. All day your image or text will sit next to me on my desk...',
+        content: 'Thank you for your interest!\n\nI (<@1072591753854586900>) have this dashboard thing in my room, see https://discord.com/channels/1338149752671572039/1338153124270968923/1391773929776873605. On this image there\'s a silly cat on the right. Do you see it? Now here\'s the fun part: it\'s no longer the cat. Well. Unless you want it to. You can upload anything and everything into this channel to suggest it. Can be any image or just text as well! Then in the night the thing with the most upvotes gets picked as the image for the next day. So post your things and upvote cool things! And I will have to endure them the whole day. All day your image or text will sit next to me on my desk...\n-# (Pro tip: if you post your image with any of these as the message text, it will become big: `fullscreen, full, large, big, wallpaper, cover`)',
         flags: 'Ephemeral'
       })
     }
