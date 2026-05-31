@@ -106,11 +106,10 @@ export function errorDiffusionDither<T extends Buffer | Uint8Array>(imageData: T
   return imageData
 }
 
-export async function loadAndDitherImage(url: string, maxWidth: number, maxHeight: number, fit: 'cover' | 'contain' = 'contain', mode: 'ordered' | 'error-diffusion' = 'ordered') {
-  let data: Buffer
+export async function loadImage(url: string) {
   if (!url.startsWith('http')) {
     // local file
-    data = await fs.readFile(
+    return await fs.readFile(
       path.join(import.meta.dirname, '..', '..', 'credentials', 'cache', url)
     )
   } else {
@@ -120,9 +119,12 @@ export async function loadAndDitherImage(url: string, maxWidth: number, maxHeigh
       url,
       responseType: 'arraybuffer'
     })
-    data = res.data as Buffer
+    return res.data as Buffer
   }
+}
 
+export async function loadAndDitherImage(url: string | Buffer, maxWidth: number, maxHeight: number, fit: 'cover' | 'contain' = 'contain', mode: 'ordered' | 'error-diffusion' = 'ordered') {
+  const data = typeof url === 'string' ? await loadImage(url) : url
   const meta = await sharp(data).metadata()
   const xAdjust = maxWidth / meta.width!
   const yAdjust = maxHeight / meta.height!

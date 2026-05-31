@@ -1,5 +1,6 @@
+import { findLeastNoisy } from "../../lib/find-least-noisy"
 import type { Renderer } from "../../lib/image"
-import { drawDitheredImage, loadAndDitherImage } from "../../lib/imgdither"
+import { drawDitheredImage, loadAndDitherImage, loadImage } from "../../lib/imgdither"
 
 
 export type QuoteContent = {
@@ -15,12 +16,18 @@ export function drawQuote(content: QuoteContent, fullscreen: boolean): Renderer<
     paint.newRect(0, 0, width, height)
       .fill('white')
 
-    let authorOutside = true
     let usedWidth = width
+
+    let authorLabel = paint
+      .newBitText('@' + content.author)
+      .size(12)
 
     if (fullscreen && content.image) {
       const { dithered } = await loadAndDitherImage(content.image, width, height, 'cover', 'error-diffusion')
       await drawDitheredImage(dithered, width, height, paint)
+      authorLabel = authorLabel
+        .at(width / 2, (height - padding + 2))
+        .anchor('center', 'bottom')
     } else {
       const maxWidth = width - padding * 2
       const maxHeight = height - padding * 2
@@ -28,9 +35,10 @@ export function drawQuote(content: QuoteContent, fullscreen: boolean): Renderer<
       let contentWidth = maxWidth
       let contentHeight = maxHeight
       let contentImage: Buffer | null = null
+      const imageBuffer = content.image ? await loadImage(content.image) : null
 
       if (content.image) {
-        const { dithered, width: renderWidth, height: renderHeight } = await loadAndDitherImage(content.image, maxWidth - 3, maxHeight - 3, 'contain', 'error-diffusion')
+        const { dithered, width: renderWidth, height: renderHeight } = await loadAndDitherImage(imageBuffer!, maxWidth - 3, maxHeight - 3, 'contain', 'error-diffusion')
         contentWidth = renderWidth + 2
         contentHeight = renderHeight + 2
         contentImage = dithered
@@ -55,7 +63,19 @@ export function drawQuote(content: QuoteContent, fullscreen: boolean): Renderer<
         paint.transform(padding + 1 + xShift, padding + 1 + yShift)
         await drawDitheredImage(contentImage!, contentWidth - 2, contentHeight - 2, paint, 5)
         paint.transform(-padding - 1 - xShift, -padding - 1 - yShift)
-        authorOutside = yShift > padding + 6
+        const authorOutside = yShift > padding + 6
+
+        if (authorOutside) {
+          authorLabel = authorLabel
+            .at(width / 2, (height - padding * 2 + 2))
+            .anchor('center', 'bottom')
+        } else {
+          const authorSize = paint.newBitText('@' + content.author).size(12).toRect().getSize()
+          const { x, y } = await findLeastNoisy(imageBuffer!, authorSize.width + 12, authorSize.height + 8, 3, contentWidth - 2, contentHeight - 2)
+          authorLabel = authorLabel
+            .at(xShift + padding + 1 + x + 6, yShift + padding + 1 + y + 5)
+            .anchor('left', 'top')
+        }
       } else {
         const textPadding = padding * 2
         paint.newBitText(content.text ?? '')
@@ -66,20 +86,13 @@ export function drawQuote(content: QuoteContent, fullscreen: boolean): Renderer<
           .maxWidth(maxWidth - textPadding*2)
           .maxHeight(height - padding*2 - textPadding*2)
           .render('black')
-        authorOutside = false
+        authorLabel = authorLabel
+          .at(width / 2, (height - padding * 2 + 2))
+          .anchor('center', 'bottom')
       }
     }
 
-    paint.newBitText('@' + content.author)
-      .at(
-        width / 2,
-        authorOutside ? (height - padding + 2) : (height - padding * 2 + 2)
-      )
-      .anchor(
-        'center',
-        'bottom'
-      )
-      .size(12)
+    authorLabel
       .useRect(r => r
         .translate(0, -1)
         .inset(-6, -4)
