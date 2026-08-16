@@ -129,6 +129,21 @@ export async function runDiscordBot(opts?: { dummy?: boolean }) {
     const img = isFullScreen
       ? useImage(800, 480 - 160)
       : useImage(800 - 400, 480 - 160)
+
+    // REMOVE ME, silly thing
+    if (text.toLowerCase().replaceAll('\W', '') === 's') {
+      if (message.author.id === '620737463517708298' || message.author.id === '1254399512869601285') {
+        const options = [
+          'I am a naughty little boy',
+          'I like kissing boys',
+          'R',
+          'Selling foot pics for 5 bucks, DM me',
+          'Please ban me from totd'
+        ]
+        text = options[Math.floor(Math.random() * options.length)]
+      }
+    }
+
     await img.draw(
       drawQuote({
         author: message.author.displayName,
