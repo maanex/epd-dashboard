@@ -1,6 +1,6 @@
 import { useImage } from '../../lib/image'
 import { drawDayview } from './dayview'
-import { calcQuoteContentSize, drawQuote, type QuoteContent } from './quote'
+import { drawQuote, type QuoteContent } from './quote'
 import { drawToday, type Badge } from './today'
 import { Const } from '../../lib/const'
 import type { WeatherApi } from '../../api/weather'
@@ -25,7 +25,7 @@ export async function createAstroFace(opts: {
   const dayviewHeight = 100
   const dayeventsMaxHeight = 70
   const widthsFullscreenTotd = [ 300, 0, 300 ]
-  const widhtsInlineTotd = [ 200, 400, 200 ]
+  const widthsInlineTotd = [ 247, 400, 153 ]
 
   const totdData = opts.quote
 
@@ -56,7 +56,7 @@ export async function createAstroFace(opts: {
   const dayHeight = dayviewHeight + dayeventsHeight + hLineHeight * 2
 
   const totdFullscreen = Boolean(totdData && totdData.image && Const.FullscreenTriggerWords.includes(totdData.text?.toLowerCase() ?? ''))
-  let [ widthToday, widthQuote, widthUpcoming ] = totdFullscreen ? widthsFullscreenTotd : widhtsInlineTotd
+  let [ widthToday, widthQuote, widthUpcoming ] = totdFullscreen ? widthsFullscreenTotd : widthsInlineTotd
 
   if (totdData) {
     if (totdFullscreen) {
@@ -103,8 +103,8 @@ export async function createAstroFace(opts: {
     color: 'big-waves'
   } satisfies Badge)))
 
-  img.draw(
-    drawToday(opts.calendar, totdFullscreen, badges, (totdData && !totdData.image) || (widthToday < widthsFullscreenTotd[0])),
+  await img.draw(
+    drawToday(opts.calendar, opts.vault, totdFullscreen, badges, (totdData && !totdData.image) || (widthToday < widthsFullscreenTotd[0])),
     0, 0,
     widthToday, Const.ScreenHeight - dayHeight
   )

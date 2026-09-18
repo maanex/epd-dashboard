@@ -1,4 +1,5 @@
 import type { GCalendarApi } from "../../api/gcalendar"
+import type { VaultApi } from "../../api/vault"
 import { cFont } from "../../lib/c-font"
 import { DatetimeUtils } from "../../lib/datetime-utils"
 import type { Renderer } from "../../lib/image"
@@ -13,7 +14,7 @@ export type Badge = {
   color: FillStyle | null
 }
 
-function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: ReturnType<typeof usePaint>, width: number, height: number, asOverlay: boolean, badges: Badge[], xConnecting: boolean) {
+function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, vaultTasks: Awaited<ReturnType<VaultApi['getTasks']>>, paint: ReturnType<typeof usePaint>, width: number, height: number, asOverlay: boolean, badges: Badge[], xConnecting: boolean) {
   const padding = 15
   const maxWidth = width - padding * 2
 
@@ -112,12 +113,31 @@ function drawAgenda(calendar: ReturnType<GCalendarApi['getData']>, paint: Return
 
   y += padding
 
-  for (let i = 0; i < 8; i++) {
-    const task = calendar.tasks[i]
-    if (!task) break
+  const inThreeDays = new Date()
+  inThreeDays.setDate(inThreeDays.getDate() + 3)
 
-    const isInDefaultList = task.partOf.title === defaultTaskListName
-    const taskTitle = (isInDefaultList ? '' : `${task.partOf.title!}: `) + (task.title ?? '(mystery task)')
+  // merge calendar.tasks and vaultTasks into a single array of tasks, sorted by due date
+  const allTasks = [
+    ...calendar.tasks.map(t => ({ title: t.title, due: t.due, listName: t.partOf?.title })),
+    ...vaultTasks.map(t => {
+      const listName = t.folder.startsWith('Projects/')
+        ? t.folder.split('/')[1]
+        : undefined
+      return { title: t.name, due: t.due, listName }
+    })
+  ].sort((a, b) => {
+    const aDate = new Date(a.due || inThreeDays.getTime())
+    const bDate = new Date(b.due || inThreeDays.getTime())
+    return aDate.getTime() - bDate.getTime()
+  })
+
+  for (let i = 0; i < 8; i++) {
+    const task = allTasks[i]
+    if (!task)
+      break
+
+    const showListName = task.listName && task.listName !== defaultTaskListName
+    const taskTitle = (showListName ? `${task.listName!}: ` : '') + (task.title ?? '(mystery task)')
     let currentWidth = Math.min(maxWidth - 18, taskTitle.length * cFont.f12.width)
 
     if (task.due && new Date(task.due).getTime() < endOfToday.getTime()) {
@@ -200,8 +220,8 @@ function drawQRCode(calendarApi: GCalendarApi, paint: ReturnType<typeof usePaint
     .render('black')
 }
 
-export function drawToday(calendarApi: GCalendarApi, asOverlay: boolean, badges: Badge[], xConnecting: boolean): Renderer<void> {
-  return ({ paint, width, height }) => {
+export function drawToday(calendarApi: GCalendarApi, vaultApi: VaultApi, asOverlay: boolean, badges: Badge[], xConnecting: boolean): Renderer<void> {
+  return async ({ paint, width, height }) => {
     if (calendarApi.isSignedOut) {
       drawQRCode(calendarApi, paint, width, height)
       return
@@ -213,6 +233,7 @@ export function drawToday(calendarApi: GCalendarApi, asOverlay: boolean, badges:
     }
 
     const calendar = calendarApi.getData()
-    drawAgenda(calendar, paint, width, height, asOverlay, badges, xConnecting)
+    const vaultTasks = await vaultApi.getTasks()
+    drawAgenda(calendar, vaultTasks, paint, width, height, asOverlay, badges, xConnecting)
   }
 }
