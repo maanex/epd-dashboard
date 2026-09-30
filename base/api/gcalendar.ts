@@ -228,7 +228,9 @@ export const useGCalendarApi = async (filter?: Filter) => {
   }
 
   return {
-    getData: () => data as Exclude<typeof data, typeof SIGNED_OUT>,
+    getData: () => data === SIGNED_OUT
+      ? { events: [], tasks: [] }
+      : data as Exclude<typeof data, typeof SIGNED_OUT>,
     refresh,
     assertRecentData,
     isSignedOut: data === SIGNED_OUT,
