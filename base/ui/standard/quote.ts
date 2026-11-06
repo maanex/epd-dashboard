@@ -6,6 +6,7 @@ export type QuoteContent = {
   author: string
   text?: string
   image?: string
+  fullscreen?: boolean
 }
 
 const padding = 10

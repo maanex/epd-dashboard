@@ -20,6 +20,7 @@ import { useWeatherDummy } from './api/weather-dummy'
 import { useGCalendarDummy } from './api/gcalendar-dummy'
 import { useVaultApi } from './api/vault'
 import { useVaultDummy } from './api/vault-dummy'
+import { useDatacord } from './lib/datacord'
 
 
 // Register global fonts
@@ -51,6 +52,8 @@ consola.success('gCalendar loaded')
 consola.start('Loading holidays')
 const holidays = await useHolidaysApi()
 consola.success('Holidays loaded')
+
+const datacord = await useDatacord()
 
 consola.start('Starting Discord bot')
 const disco = await runDiscordBot({
@@ -91,15 +94,12 @@ async function drawScreen(opts: {
   await calendar.assertRecentData().catch(consola.error)
   await holidays.assertRecentData().catch(consola.error)
 
-  const totd = await fs.readFile(
-    path.join(import.meta.dirname, '..', 'credentials', 'totd.json'),
-    'utf-8'
-  ).catch(() => null)
-  const totdData = await Promise.try(() => JSON.parse(totd ?? '')).catch(() => null)
-  if (opts.totdOverride) {
+  let totdData = datacord.getCurrentTotd()
+  if (opts.totdOverride && Object.values(opts.totdOverride).some(v => v !== undefined)) {
+    totdData ??= { author: 'override' }
     for (const [k, v] of Object.entries(opts.totdOverride)) {
       if (v !== undefined)
-        totdData[k] = v
+        (totdData as Record<string, any>)[k] = v
     }
   }
 
@@ -112,7 +112,7 @@ async function drawScreen(opts: {
     calendar,
     holidays,
     vault,
-    quote: totdData,
+    quote: totdData ?? undefined,
     localTemperature: opts.localTemperature
   })
 }

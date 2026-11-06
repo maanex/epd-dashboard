@@ -109,9 +109,10 @@ export function errorDiffusionDither<T extends Buffer | Uint8Array>(imageData: T
 export async function loadImage(url: string) {
   if (!url.startsWith('http')) {
     // local file
-    return await fs.readFile(
-      path.join(import.meta.dirname, '..', '..', 'credentials', 'cache', url)
-    )
+    const filePath = path.isAbsolute(url)
+      ? url
+      : path.join(import.meta.dirname, '..', '..', 'credentials', 'cache', url)
+    return await fs.readFile(filePath)
   } else {
     // remote file
     const res = await axios({

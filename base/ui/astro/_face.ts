@@ -55,7 +55,7 @@ export async function createAstroFace(opts: {
 
   const dayHeight = dayviewHeight + dayeventsHeight + hLineHeight * 2
 
-  const totdFullscreen = Boolean(totdData && totdData.image && Const.FullscreenTriggerWords.includes(totdData.text?.toLowerCase() ?? ''))
+  const totdFullscreen = Boolean(totdData && totdData.image && (totdData.fullscreen ?? Const.FullscreenTriggerWords.includes(totdData.text?.toLowerCase() ?? '')))
   let [ widthToday, widthQuote, widthUpcoming ] = totdFullscreen ? widthsFullscreenTotd : widthsInlineTotd
 
   if (totdData) {
@@ -91,8 +91,9 @@ export async function createAstroFace(opts: {
 
   // Day length
   const dayLengthMetrics = getDayLengthMetrics()
+  const includeDelta = (dayLengthMetrics.dayChangeToday > 0) // we dont want bad news :D
   badges.push({
-    text: `${Math.floor(dayLengthMetrics.dayLength)}h${Math.floor((dayLengthMetrics.dayLength % 1) * 60)}m (+${dayLengthMetrics.dayChangeToday}/${dayLengthMetrics.dayChangeNextWeek > 0 ? '+' : ''}${dayLengthMetrics.dayChangeNextWeek})`,
+    text: `${Math.floor(dayLengthMetrics.dayLength)}h${Math.floor((dayLengthMetrics.dayLength % 1) * 60)}m${includeDelta ? ` (+${dayLengthMetrics.dayChangeToday}/${dayLengthMetrics.dayChangeNextWeek > 0 ? '+' : ''}${dayLengthMetrics.dayChangeNextWeek})` : ''}`,
     color: null
   })
 

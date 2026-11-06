@@ -7,6 +7,7 @@ import { useImage } from '../lib/image'
 import { drawQuote } from '../ui/astro/quote'
 import axios from 'axios'
 import { Const } from '../lib/const'
+import { ARCHIVE_DIR, CACHE_DIR, useDatacord } from '../lib/datacord'
 
 
 const loadingEmojis = [ '🫦', '😍', '👀', '📸', '👍', '🤨', '👽', '🆗', '❔', '🤡' ]
@@ -43,9 +44,9 @@ const threadNames = [
   '!!!!!!!!!'
 ]
 
-async function downloadImage(url: string | undefined, filename: string) {
+async function downloadImage(url: string | undefined, filename: string): Promise<boolean> {
   if (!url)
-    return null
+    return false
   const buff = await axios.get(url, {
     responseType: 'arraybuffer',
     headers: {
@@ -55,17 +56,20 @@ async function downloadImage(url: string | undefined, filename: string) {
     },
   }).catch(e => null)
   if (!buff?.data)
-    return null
-  fs.writeFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'cache', filename), buff.data)
+    return false
+  try {
+    await fs.writeFile(path.join(CACHE_DIR, filename), buff.data)
+  } catch (error) {
+    consola.error(error)
+    return false
+  }
+  return true
 }
 
 export async function runDiscordBot(opts?: { dummy?: boolean }) {
   const config = await fs.readFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'discord.json'))
-  const database = await fs.readFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'datacord.json'))
   const { token, id: selfId, channel, archive } = JSON.parse(config.toString())
-  const db: { candidates: any[], userWins: Record<string, number> } = JSON.parse(database.toString() || '{}')
-
-  const saveDb = () => fs.writeFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'datacord.json'), JSON.stringify(db))
+  const datacord = await useDatacord()
 
   const client = new Client({
     intents: [
@@ -122,9 +126,6 @@ export async function runDiscordBot(opts?: { dummy?: boolean }) {
         const channel = message.guild?.channels.cache.get(id) as TextChannel
         return channel ? `#${channel.name}` : `<#${id}>`
       })
-    if (hasImage)
-      downloadImage(image?.proxyURL ?? image?.url, `${message.id}.png`)
-
     const isFullScreen = Const.FullscreenTriggerWords.includes(text?.toLowerCase())
     const img = isFullScreen
       ? useImage(800, 480 - 160)
@@ -175,16 +176,22 @@ export async function runDiscordBot(opts?: { dummy?: boolean }) {
     await mes.react('👍')
     await mes.react('👎')
 
+    if (hasImage) {
+      const downloaded = await downloadImage(image?.proxyURL ?? image?.url, `${mes.id}.png`)
+      if (!downloaded) {
+        await message.delete()
+        return
+      }
+    }
+
     await message.delete()
-    db.candidates ||= []
-    db.candidates.push({
+    datacord.addCandidate({
       id: mes.id,
       author: message.author.username,
       authorId: message.author.id,
-      text,
-      image: hasImage ? `${message.id}.png` : undefined,
+      text: hasImage ? null : text,
+      fullscreen: isFullScreen,
     })
-    saveDb()
   }).catch(console.error))
 
   const badaboom = async () => {
@@ -193,21 +200,23 @@ export async function runDiscordBot(opts?: { dummy?: boolean }) {
       return consola.error(`Channel with ID ${channel} not found`)
 
     const messageList = await channelBro.messages.fetch({ limit: 100 })
-    db.userWins ||= {}
-    const maxUserWins = Math.max(...Object.values(db.userWins))
-    const candidates = (db.candidates || [])
-      .map((c: any) => ({
-        ...c,
-        score: (messageList.get(c.id)?.reactions.cache.get('👍')?.count || 0) - (messageList.get(c.id)?.reactions.cache.get('👎')?.count || 0)
-          + (1 - (db.userWins[c.authorId] ?? 0) / (maxUserWins + 1))
-          + (Math.random() * 0.3),
-      }))
-      .sort((a: any, b: any) => b.score - a.score)
+    const rawCandidates = datacord.getCandidates()
+    const candidates = rawCandidates
+      .map(c => {
+        const upvotes = messageList.get(c.id)?.reactions.cache.get('👍')?.count || 0
+        const downvotes = messageList.get(c.id)?.reactions.cache.get('👎')?.count || 0
+        const score = upvotes - downvotes
+          + datacord.getUserWinsScore(c.authorId)
+          + (Math.random() * 0.3)
+        return { ...c, upvotes, downvotes, score }
+      })
+      .sort((a, b) => b.score - a.score)
 
     const winner = candidates[0]
-    await channelBro.bulkDelete(db.candidates.length + 10)
+    await channelBro.bulkDelete(rawCandidates.length + 10)
 
     if (!winner) {
+      datacord.clearCandidates()
       await channelBro.send({
         flags: 32768,
         components: [
@@ -216,29 +225,23 @@ export async function runDiscordBot(opts?: { dummy?: boolean }) {
           { type: 1, components: [ { type: 2, style: 2, label: 'What is this?', custom_id: 'whatsthis' } ] }
         ]
       })
-      fs.unlink(path.join(import.meta.dirname, '..', '..', 'credentials', 'totd.json')).catch(console.error)
       return
     }
 
-    db.userWins[winner.authorId] = (db.userWins[winner.authorId] || 0) + 1
-    db.candidates = []
-    saveDb()
+    const recorded = await datacord.recordWinner(winner, {
+      upvotes: winner.upvotes,
+      downvotes: winner.downvotes,
+      score: winner.score,
+    })
+    datacord.clearCandidates()
 
-    if (winner.image) {
-      // rename file to current.png
-      const cacheDir = path.join(import.meta.dirname, '..', '..', 'credentials', 'cache')
-      const oldPath = path.join(cacheDir, winner.image)
-      const newPath = path.join(cacheDir, 'current.png')
-      await fs.rename(oldPath, newPath).catch(console.error)
-      winner.image = 'current.png'
-    }
-
-    fs.writeFile(path.join(import.meta.dirname, '..', '..', 'credentials', 'totd.json'), JSON.stringify(winner)).catch(console.error)
-
-    const isFullScreen = Const.FullscreenTriggerWords.includes(winner.text?.toLowerCase())
     const img = useImage(800 - 400, 480 - 160)
     await img.draw(
-      drawQuote(winner, isFullScreen),
+      drawQuote({
+        author: recorded.author,
+        text: recorded.text ?? undefined,
+        image: recorded.text === null ? path.join(ARCHIVE_DIR, `${recorded.id}.png`) : undefined,
+      }, recorded.fullscreen),
       0, 0,
       img.width, img.height
     )

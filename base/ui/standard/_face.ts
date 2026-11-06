@@ -31,7 +31,7 @@ export async function createStandardFace(opts: {
     Const.ScreenWidth, dayviewHeight
   )
 
-  const totdFullscreen = Boolean(totdData && totdData.image && Const.FullscreenTriggerWords.includes(totdData.text?.toLowerCase() ?? ''))
+  const totdFullscreen = Boolean(totdData && totdData.image && (totdData.fullscreen ?? Const.FullscreenTriggerWords.includes(totdData.text?.toLowerCase() ?? '')))
   if (totdData) {
     if (totdFullscreen) {
       await img.draw(
